@@ -1,128 +1,253 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f0f0f0;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f0f0;
 }
 
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
-    color: #333;
-    text-align: center;
+  color: #333;
+  text-align: center;
 }
 
 .form-section {
-    margin-bottom: 30px;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
 }
 
 form {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-input, select, button {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+input,
+select,
+button {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
 }
 
 button:hover {
-    background-color: #45a049;
+  background-color: #45a049;
 }
 
 /* Takvim Stilleri */
 .takvim-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .nav-btn {
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
 }
 
 .nav-btn:hover {
-    background-color: #45a049;
+  background-color: #45a049;
 }
 
 .takvim-tablo {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 30px;
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
 }
 
 .takvim-tablo th {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px;
-    text-align: center;
+  background-color: #4caf50;
+  color: white;
+  padding: 10px;
+  text-align: center;
 }
 
 .takvim-tablo td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    height: 100px;
-    vertical-align: top;
+  border: 1px solid #ddd;
+  padding: 10px;
+  height: 100px;
+  vertical-align: top;
 }
 
 .takvim-tablo td.bos {
-    background-color: #f9f9f9;
+  background-color: #f9f9f9;
+}
+
+.gun {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.gun:hover {
+  background-color: #f0f0f0;
 }
 
 .gun-baslik {
-    font-weight: bold;
-    margin-bottom: 5px;
+  font-weight: bold;
+  margin-bottom: 5px;
 }
 
 .vardiyalar {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .vardiya-item {
-    background-color: #4CAF50;
-    color: white;
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 12px;
-    cursor: pointer;
-    text-align: center;
+  background-color: #4caf50;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
 }
 
 .vardiya-item[title]:hover::after {
-    content: attr(title);
-    position: absolute;
-    background: #333;
-    color: white;
-    padding: 5px;
-    border-radius: 3px;
-    font-size: 12px;
-    margin-top: -25px;
-    margin-left: 10px;
-    white-space: nowrap;
-} 
+  content: attr(title);
+  position: absolute;
+  background: #333;
+  color: white;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-top: -25px;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+/* Modal Stilleri */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 5px;
+  width: 80%;
+  max-width: 500px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 20px;
+  top: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #666;
+}
+
+.close:hover {
+  color: #333;
+}
+
+/* Vardiya Seçim Butonları */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.vardiya-butonlar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vardiya-butonlar label {
+  flex: 1;
+  min-width: 150px;
+}
+
+.vardiya-butonlar input[type="radio"] {
+  display: none;
+}
+
+.vardiya-btn {
+  display: block;
+  padding: 10px;
+  text-align: center;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vardiya-btn.sabah {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.vardiya-btn.aksam {
+  border-color: #2196f3;
+  color: #2196f3;
+}
+
+.vardiya-btn.gece {
+  border-color: #9c27b0;
+  color: #9c27b0;
+}
+
+.vardiya-btn.active,
+input[type="radio"]:checked + .vardiya-btn {
+  color: white;
+}
+
+.vardiya-btn.sabah.active,
+input[type="radio"]:checked + .vardiya-btn.sabah {
+  background-color: #4caf50;
+}
+
+.vardiya-btn.aksam.active,
+input[type="radio"]:checked + .vardiya-btn.aksam {
+  background-color: #2196f3;
+}
+
+.vardiya-btn.gece.active,
+input[type="radio"]:checked + .vardiya-btn.gece {
+  background-color: #9c27b0;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-top: 10px;
+}

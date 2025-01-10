@@ -1,56 +1,56 @@
 {
-    "personel": [
-        {
-            "id": "64f1a2b3c4d5",
-            "ad": "Ahmet",
-            "soyad": "Yılmaz"
-        },
-        {
-            "id": "64f1a2b3c4d6",
-            "ad": "Ayşe",
-            "soyad": "Demir"
-        },
-        {
-            "id": "64f1a2b3c4d7",
-            "ad": "Mehmet",
-            "soyad": "Kaya"
-        },
-        {
-            "id": "64f1a2b3c4d8",
-            "ad": "Fatma",
-            "soyad": "Çelik"
-        }
-    ],
-    "vardiyalar": [
-        {
-            "id": "64f1a2b3c4e1",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": "2024-01-15",
-            "vardiya_turu": "sabah"
-        },
-        {
-            "id": "64f1a2b3c4e2",
-            "personel_id": "64f1a2b3c4d6",
-            "tarih": "2024-01-15",
-            "vardiya_turu": "aksam"
-        },
-        {
-            "id": "64f1a2b3c4e3",
-            "personel_id": "64f1a2b3c4d7",
-            "tarih": "2024-01-15",
-            "vardiya_turu": "gece"
-        },
-        {
-            "id": "64f1a2b3c4e4",
-            "personel_id": "64f1a2b3c4d8",
-            "tarih": "2024-01-16",
-            "vardiya_turu": "sabah"
-        },
-        {
-            "id": "64f1a2b3c4e5",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": "2024-01-16",
-            "vardiya_turu": "aksam"
-        }
-    ]
-} 
+  "personel": [
+    {
+      "id": "64f1a2b3c4d5",
+      "ad": "Ahmet",
+      "soyad": "Yılmaz"
+    },
+    {
+      "id": "64f1a2b3c4d6",
+      "ad": "Ayşe",
+      "soyad": "Demir"
+    },
+    {
+      "id": "64f1a2b3c4d7",
+      "ad": "Mehmet",
+      "soyad": "Kaya"
+    },
+    {
+      "id": "64f1a2b3c4d8",
+      "ad": "Fatma",
+      "soyad": "Çelik"
+    }
+  ],
+  "vardiyalar": [
+    {
+      "id": "64f1a2b3c4e1",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": "2024-01-15",
+      "vardiya_turu": "sabah"
+    },
+    {
+      "id": "64f1a2b3c4e2",
+      "personel_id": "64f1a2b3c4d6",
+      "tarih": "2024-01-15",
+      "vardiya_turu": "aksam"
+    },
+    {
+      "id": "64f1a2b3c4e3",
+      "personel_id": "64f1a2b3c4d7",
+      "tarih": "2024-01-15",
+      "vardiya_turu": "gece"
+    },
+    {
+      "id": "64f1a2b3c4e4",
+      "personel_id": "64f1a2b3c4d8",
+      "tarih": "2024-01-16",
+      "vardiya_turu": "sabah"
+    },
+    {
+      "id": "64f1a2b3c4e5",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": "2024-01-16",
+      "vardiya_turu": "aksam"
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 <?php
 
 // JSON dosyasından verileri okuma
-function veriOku() {
+function veriOku()
+{
     if (!file_exists('personel.json')) {
         return ['personel' => [], 'vardiyalar' => []];
     }
@@ -10,12 +11,14 @@ function veriOku() {
 }
 
 // JSON dosyasına veri yazma
-function veriYaz($data) {
+function veriYaz($data)
+{
     file_put_contents('personel.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
 
 // Yeni personel ekleme
-function personelEkle($ad, $soyad) {
+function personelEkle($ad, $soyad)
+{
     $data = veriOku();
     $yeniPersonel = [
         'id' => uniqid(),
@@ -27,7 +30,8 @@ function personelEkle($ad, $soyad) {
 }
 
 // Vardiya ekleme
-function vardiyaEkle($personelId, $tarih, $vardiyaTuru) {
+function vardiyaEkle($personelId, $tarih, $vardiyaTuru)
+{
     $data = veriOku();
     $yeniVardiya = [
         'id' => uniqid(),
@@ -40,7 +44,8 @@ function vardiyaEkle($personelId, $tarih, $vardiyaTuru) {
 }
 
 // Personel listesini getirme (select için)
-function personelListesiGetir() {
+function personelListesiGetir()
+{
     $data = veriOku();
     $output = '';
     foreach ($data['personel'] as $personel) {
@@ -55,39 +60,41 @@ function personelListesiGetir() {
 }
 
 // Belirli bir tarihteki vardiyaları getir
-function gunlukVardiyalariGetir($tarih) {
+function gunlukVardiyalariGetir($tarih)
+{
     $data = veriOku();
     $gunlukVardiyalar = [];
-    
+
     foreach ($data['vardiyalar'] as $vardiya) {
         if ($vardiya['tarih'] === $tarih) {
-            $personel = array_filter($data['personel'], function($p) use ($vardiya) {
+            $personel = array_filter($data['personel'], function ($p) use ($vardiya) {
                 return $p['id'] === $vardiya['personel_id'];
             });
             $personel = reset($personel);
-            
+
             $vardiyaTurleri = [
                 'sabah' => 'S',
                 'aksam' => 'A',
                 'gece' => 'G'
             ];
-            
+
             $gunlukVardiyalar[] = [
                 'personel' => $personel['ad'] . ' ' . $personel['soyad'],
                 'vardiya' => $vardiyaTurleri[$vardiya['vardiya_turu']]
             ];
         }
     }
-    
+
     return $gunlukVardiyalar;
 }
 
 // Takvim oluşturma
-function takvimOlustur($ay, $yil) {
+function takvimOlustur($ay, $yil)
+{
     $ilkGun = mktime(0, 0, 0, $ay, 1, $yil);
     $ayinIlkGunu = date('w', $ilkGun);
     $aydakiGunSayisi = date('t', $ilkGun);
-    
+
     $output = '<table class="takvim-tablo">';
     $output .= '<tr>
         <th>Pzr</th>
@@ -98,26 +105,26 @@ function takvimOlustur($ay, $yil) {
         <th>Cum</th>
         <th>Cmt</th>
     </tr>';
-    
+
     // Boş günleri ekle
     $output .= '<tr>';
     for ($i = 0; $i < $ayinIlkGunu; $i++) {
         $output .= '<td class="bos"></td>';
     }
-    
+
     // Günleri ekle
     $gunSayaci = $ayinIlkGunu;
     for ($gun = 1; $gun <= $aydakiGunSayisi; $gun++) {
         if ($gunSayaci % 7 === 0 && $gun !== 1) {
             $output .= '</tr><tr>';
         }
-        
+
         $tarih = sprintf('%04d-%02d-%02d', $yil, $ay, $gun);
         $vardiyalar = gunlukVardiyalariGetir($tarih);
-        
-        $output .= '<td class="gun">';
+
+        $output .= sprintf('<td class="gun" data-tarih="%s">', $tarih);
         $output .= '<div class="gun-baslik">' . $gun . '</div>';
-        
+
         if (!empty($vardiyalar)) {
             $output .= '<div class="vardiyalar">';
             foreach ($vardiyalar as $vardiya) {
@@ -127,18 +134,18 @@ function takvimOlustur($ay, $yil) {
             }
             $output .= '</div>';
         }
-        
+
         $output .= '</td>';
-        
+
         $gunSayaci++;
     }
-    
+
     // Kalan boş günleri ekle
     while ($gunSayaci % 7 !== 0) {
         $output .= '<td class="bos"></td>';
         $gunSayaci++;
     }
-    
+
     $output .= '</tr></table>';
     return $output;
-} 
+}
