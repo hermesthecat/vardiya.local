@@ -698,3 +698,166 @@ function pdfRaporuIcinHtmlOlustur($ay, $yil) {
     $html .= '</table>';
     return $html;
 }
+
+// Personel tercihlerini kaydet
+function personelTercihKaydet($personelId, $tercihler) {
+    $data = veriOku();
+    
+    // Tercihleri güncelle veya ekle
+    $tercihBulundu = false;
+    if (!isset($data['personel_tercihleri'])) {
+        $data['personel_tercihleri'] = [];
+    }
+    
+    foreach ($data['personel_tercihleri'] as &$tercih) {
+        if ($tercih['personel_id'] === $personelId) {
+            $tercih['tercihler'] = $tercihler;
+            $tercihBulundu = true;
+            break;
+        }
+    }
+    
+    if (!$tercihBulundu) {
+        $data['personel_tercihleri'][] = [
+            'personel_id' => $personelId,
+            'tercihler' => $tercihler
+        ];
+    }
+    
+    veriYaz($data);
+}
+
+// Personel tercihlerini getir
+function personelTercihGetir($personelId) {
+    $data = veriOku();
+    
+    if (!isset($data['personel_tercihleri'])) {
+        return [
+            'tercih_edilen_vardiyalar' => [],
+            'tercih_edilmeyen_gunler' => [],
+            'max_ardisik_vardiya' => 5
+        ];
+    }
+    
+    foreach ($data['personel_tercihleri'] as $tercih) {
+        if ($tercih['personel_id'] === $personelId) {
+            return $tercih['tercihler'];
+        }
+    }
+    
+    return [
+        'tercih_edilen_vardiyalar' => [],
+        'tercih_edilmeyen_gunler' => [],
+        'max_ardisik_vardiya' => 5
+    ];
+}
+
+// Personelin ay içindeki vardiya sayılarını hesapla
+function personelAylikVardiyaSayisi($personelId, $ay, $yil) {
+    $data = veriOku();
+    $baslangic = sprintf('%04d-%02d-01', $yil, $ay);
+    $bitis = date('Y-m-t', strtotime($baslangic));
+    
+    $vardiyaSayilari = [
+        'sabah' => 0,
+        'aksam' => 0,
+        'gece' => 0,
+        'toplam' => 0
+    ];
+    
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['personel_id'] === $personelId && 
+            $vardiya['tarih'] >= $baslangic && 
+            $vardiya['tarih'] <= $bitis) {
+            $vardiyaSayilari[$vardiya['vardiya_turu']]++;
+            $vardiyaSayilari['toplam']++;
+        }
+    }
+    
+    return $vardiyaSayilari;
+}
+
+// Akıllı vardiya önerisi oluştur
+function akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru) {
+    $data = veriOku();
+    $puanlar = [];
+    
+    // Her personel için puan hesapla
+    foreach ($data['personel'] as $personel) {
+        $puan = 100;
+        $personelId = $personel['id'];
+        
+        // Personel tercihleri kontrol
+        $tercihler = personelTercihGetir($personelId);
+        
+        // Tercih edilen vardiya kontrolü
+        if (in_array($vardiyaTuru, $tercihler['tercih_edilen_vardiyalar'])) {
+            $puan += 20;
+        }
+        
+        // Tercih edilmeyen gün kontrolü
+        $gun = date('w', strtotime($tarih));
+        if (in_array($gun, $tercihler['tercih_edilmeyen_gunler'])) {
+            $puan -= 30;
+        }
+        
+        // Ardışık çalışma günü kontrolü
+        if (!ardisikCalismaGunleriniKontrolEt($personelId, $tarih)) {
+            $puan = 0; // Çalışamaz
+            continue;
+        }
+        
+        // Vardiya çakışması kontrolü
+        if (vardiyaCakismasiVarMi($personelId, $tarih, $vardiyaTuru)) {
+            $puan = 0; // Çalışamaz
+            continue;
+        }
+        
+        // Ay içi vardiya dağılımı kontrolü
+        $ay = date('m', strtotime($tarih));
+        $yil = date('Y', strtotime($tarih));
+        $vardiyaSayilari = personelAylikVardiyaSayisi($personelId, $ay, $yil);
+        
+        // Vardiya sayısı dengesizliği kontrolü
+        $ortalamaVardiya = array_sum($vardiyaSayilari) / 3;
+        if ($vardiyaSayilari[$vardiyaTuru] > $ortalamaVardiya) {
+            $puan -= 15;
+        }
+        
+        // Son vardiyadan bu yana geçen süre kontrolü
+        $sonVardiyaBilgisi = personelVardiyaBilgisiGetir($personelId);
+        if ($sonVardiyaBilgisi['son_vardiya']) {
+            $gunFarki = (strtotime($tarih) - strtotime($sonVardiyaBilgisi['son_vardiya'])) / (60 * 60 * 24);
+            if ($gunFarki < 2) {
+                $puan -= 10;
+            }
+        }
+        
+        $puanlar[$personelId] = $puan;
+    }
+    
+    // En yüksek puanlı personelleri sırala
+    arsort($puanlar);
+    
+    // İlk 3 öneriyi döndür
+    $oneriler = [];
+    $sayac = 0;
+    foreach ($puanlar as $personelId => $puan) {
+        if ($puan > 0) {
+            foreach ($data['personel'] as $personel) {
+                if ($personel['id'] === $personelId) {
+                    $oneriler[] = [
+                        'personel_id' => $personelId,
+                        'ad_soyad' => $personel['ad'] . ' ' . $personel['soyad'],
+                        'puan' => $puan
+                    ];
+                    break;
+                }
+            }
+            $sayac++;
+            if ($sayac >= 3) break;
+        }
+    }
+    
+    return $oneriler;
+}

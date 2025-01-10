@@ -100,11 +100,18 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>Vardiya Ekle</h2>
+            
+            <!-- Akıllı Vardiya Önerileri -->
+            <div id="vardiyaOnerileri" class="oneri-section" style="display: none;">
+                <h3>Önerilen Personeller</h3>
+                <div class="oneri-liste"></div>
+            </div>
+
             <form method="POST" id="vardiyaForm">
                 <input type="hidden" name="tarih" id="seciliTarih">
                 <div class="form-group">
                     <label>Personel:</label>
-                    <select name="personel_id" required>
+                    <select name="personel_id" id="personelSelect" required>
                         <?php echo personelListesiGetir(); ?>
                     </select>
                 </div>
@@ -136,6 +143,9 @@
             var span = document.getElementsByClassName('close')[0];
             var seciliTarihInput = document.getElementById('seciliTarih');
             var vardiyaForm = document.getElementById('vardiyaForm');
+            var personelSelect = document.getElementById('personelSelect');
+            var vardiyaOnerileri = document.getElementById('vardiyaOnerileri');
+            var oneriListe = vardiyaOnerileri.querySelector('.oneri-liste');
 
             // Takvim hücrelerine tıklama olayı ekle
             document.querySelectorAll('.gun').forEach(function(gun) {
@@ -149,6 +159,43 @@
                         document.querySelectorAll('.vardiya-btn').forEach(function(btn) {
                             btn.classList.remove('active');
                         });
+                    }
+                });
+            });
+
+            // Vardiya türü seçildiğinde önerileri getir
+            document.querySelectorAll('input[name="vardiya_turu"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (seciliTarihInput.value && this.value) {
+                        // AJAX ile önerileri getir
+                        fetch('get_oneriler.php?tarih=' + seciliTarihInput.value + '&vardiya_turu=' + this.value)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.length > 0) {
+                                    oneriListe.innerHTML = '';
+                                    data.forEach(function(oneri) {
+                                        var div = document.createElement('div');
+                                        div.className = 'oneri-item';
+                                        div.innerHTML = `
+                                            <span>${oneri.ad_soyad}</span>
+                                            <span class="oneri-puan">Uygunluk: %${Math.round(oneri.puan)}</span>
+                                            <button type="button" class="oneri-sec" data-personel-id="${oneri.personel_id}">Seç</button>
+                                        `;
+                                        oneriListe.appendChild(div);
+                                    });
+                                    vardiyaOnerileri.style.display = 'block';
+
+                                    // Öneri seçme butonlarına tıklama olayı ekle
+                                    document.querySelectorAll('.oneri-sec').forEach(function(btn) {
+                                        btn.addEventListener('click', function() {
+                                            var personelId = this.getAttribute('data-personel-id');
+                                            personelSelect.value = personelId;
+                                        });
+                                    });
+                                } else {
+                                    vardiyaOnerileri.style.display = 'none';
+                                }
+                            });
                     }
                 });
             });

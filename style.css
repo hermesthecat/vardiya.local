@@ -404,3 +404,70 @@ textarea {
 .inline-form .form-group {
     margin: 0;
 }
+
+/* Öneri Stilleri */
+.oneri-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.oneri-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.oneri-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.oneri-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.oneri-puan {
+    color: #666;
+    font-size: 14px;
+}
+
+.oneri-sec {
+    padding: 5px 10px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.oneri-sec:hover {
+    background-color: #45a049;
+}
+
+/* Checkbox Grup Stilleri */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0;
+}
