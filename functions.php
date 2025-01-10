@@ -861,3 +861,184 @@ function akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru) {
     
     return $oneriler;
 }
+
+// Kullanıcı girişi
+function kullaniciGiris($email, $sifre) {
+    $data = veriOku();
+    
+    if (!isset($data['kullanicilar'])) {
+        throw new Exception('Kullanıcı bulunamadı.');
+    }
+    
+    foreach ($data['kullanicilar'] as $kullanici) {
+        if ($kullanici['email'] === $email && password_verify($sifre, $kullanici['sifre'])) {
+            // Oturum başlat
+            session_start();
+            $_SESSION['kullanici_id'] = $kullanici['id'];
+            $_SESSION['rol'] = $kullanici['rol'];
+            $_SESSION['ad_soyad'] = $kullanici['ad'] . ' ' . $kullanici['soyad'];
+            
+            // Giriş logunu kaydet
+            islemLogKaydet('giris', 'Kullanıcı girişi yapıldı');
+            
+            return true;
+        }
+    }
+    
+    throw new Exception('E-posta veya şifre hatalı.');
+}
+
+// Kullanıcı çıkışı
+function kullaniciCikis() {
+    islemLogKaydet('cikis', 'Kullanıcı çıkışı yapıldı');
+    session_destroy();
+}
+
+// Yeni kullanıcı oluşturma
+function kullaniciOlustur($ad, $soyad, $email, $sifre, $rol = 'personel') {
+    $data = veriOku();
+    
+    // E-posta kontrolü
+    if (isset($data['kullanicilar'])) {
+        foreach ($data['kullanicilar'] as $kullanici) {
+            if ($kullanici['email'] === $email) {
+                throw new Exception('Bu e-posta adresi zaten kullanılıyor.');
+            }
+        }
+    } else {
+        $data['kullanicilar'] = [];
+    }
+    
+    // Yeni kullanıcı
+    $yeniKullanici = [
+        'id' => uniqid(),
+        'ad' => $ad,
+        'soyad' => $soyad,
+        'email' => $email,
+        'sifre' => password_hash($sifre, PASSWORD_DEFAULT),
+        'rol' => $rol,
+        'olusturma_tarihi' => date('Y-m-d H:i:s')
+    ];
+    
+    $data['kullanicilar'][] = $yeniKullanici;
+    veriYaz($data);
+    
+    islemLogKaydet('kullanici_olustur', "Yeni kullanıcı oluşturuldu: $email");
+    
+    return $yeniKullanici['id'];
+}
+
+// Kullanıcı güncelleme
+function kullaniciGuncelle($kullaniciId, $ad, $soyad, $email, $rol = null) {
+    $data = veriOku();
+    
+    foreach ($data['kullanicilar'] as &$kullanici) {
+        if ($kullanici['id'] === $kullaniciId) {
+            $kullanici['ad'] = $ad;
+            $kullanici['soyad'] = $soyad;
+            $kullanici['email'] = $email;
+            if ($rol !== null) {
+                $kullanici['rol'] = $rol;
+            }
+            
+            veriYaz($data);
+            islemLogKaydet('kullanici_guncelle', "Kullanıcı güncellendi: $email");
+            return true;
+        }
+    }
+    
+    throw new Exception('Kullanıcı bulunamadı.');
+}
+
+// Şifre değiştirme
+function sifreDegistir($kullaniciId, $eskiSifre, $yeniSifre) {
+    $data = veriOku();
+    
+    foreach ($data['kullanicilar'] as &$kullanici) {
+        if ($kullanici['id'] === $kullaniciId) {
+            if (!password_verify($eskiSifre, $kullanici['sifre'])) {
+                throw new Exception('Mevcut şifre hatalı.');
+            }
+            
+            $kullanici['sifre'] = password_hash($yeniSifre, PASSWORD_DEFAULT);
+            veriYaz($data);
+            
+            islemLogKaydet('sifre_degistir', 'Kullanıcı şifresi değiştirildi');
+            return true;
+        }
+    }
+    
+    throw new Exception('Kullanıcı bulunamadı.');
+}
+
+// Yetki kontrolü
+function yetkiKontrol($gerekliRoller = ['admin']) {
+    if (!isset($_SESSION['kullanici_id']) || !isset($_SESSION['rol'])) {
+        header('Location: giris.php');
+        exit;
+    }
+    
+    if (!in_array($_SESSION['rol'], $gerekliRoller)) {
+        throw new Exception('Bu işlem için yetkiniz bulunmuyor.');
+    }
+    
+    return true;
+}
+
+// İşlem logu kaydetme
+function islemLogKaydet($islemTuru, $aciklama) {
+    $data = veriOku();
+    
+    if (!isset($data['islem_loglari'])) {
+        $data['islem_loglari'] = [];
+    }
+    
+    $yeniLog = [
+        'id' => uniqid(),
+        'kullanici_id' => $_SESSION['kullanici_id'] ?? null,
+        'kullanici_rol' => $_SESSION['rol'] ?? null,
+        'islem_turu' => $islemTuru,
+        'aciklama' => $aciklama,
+        'ip_adresi' => $_SERVER['REMOTE_ADDR'],
+        'tarih' => date('Y-m-d H:i:s')
+    ];
+    
+    $data['islem_loglari'][] = $yeniLog;
+    veriYaz($data);
+}
+
+// İşlem loglarını getir
+function islemLoglariGetir($baslangicTarih = null, $bitisTarih = null, $islemTuru = null, $kullaniciId = null) {
+    $data = veriOku();
+    $loglar = [];
+    
+    if (!isset($data['islem_loglari'])) {
+        return $loglar;
+    }
+    
+    foreach ($data['islem_loglari'] as $log) {
+        $ekle = true;
+        
+        if ($baslangicTarih && $log['tarih'] < $baslangicTarih) {
+            $ekle = false;
+        }
+        
+        if ($bitisTarih && $log['tarih'] > $bitisTarih) {
+            $ekle = false;
+        }
+        
+        if ($islemTuru && $log['islem_turu'] !== $islemTuru) {
+            $ekle = false;
+        }
+        
+        if ($kullaniciId && $log['kullanici_id'] !== $kullaniciId) {
+            $ekle = false;
+        }
+        
+        if ($ekle) {
+            $loglar[] = $log;
+        }
+    }
+    
+    return $loglar;
+}

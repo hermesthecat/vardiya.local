@@ -93,87 +93,142 @@
 <body>
     <?php
     require_once 'functions.php';
-
+    session_start();
+    
+    // Oturum kontrolü
+    if (!isset($_SESSION['kullanici_id'])) {
+        header('Location: giris.php');
+        exit;
+    }
+    
     $hata = '';
     $basari = '';
-
-    // POST işlemleri
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (isset($_POST['yeni_personel'])) {
-            personelEkle($_POST['ad'], $_POST['soyad']);
-            $basari = 'Personel başarıyla eklendi.';
-        } elseif (isset($_POST['vardiya_ekle'])) {
-            try {
-                vardiyaEkle($_POST['personel_id'], $_POST['tarih'], $_POST['vardiya_turu']);
-                $basari = 'Vardiya başarıyla eklendi.';
-            } catch (Exception $e) {
-                $hata = $e->getMessage();
+    
+    // Mevcut ay ve yıl
+    $ay = isset($_GET['ay']) ? (int)$_GET['ay'] : (int)date('m');
+    $yil = isset($_GET['yil']) ? (int)$_GET['yil'] : (int)date('Y');
+    
+    // Vardiya ekleme işlemi
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem']) && $_POST['islem'] === 'vardiya_ekle') {
+        try {
+            // Yönetici ve admin rollerini kontrol et
+            if (!in_array($_SESSION['rol'], ['yonetici', 'admin'])) {
+                throw new Exception('Vardiya ekleme yetkiniz bulunmuyor.');
             }
+            
+            vardiyaEkle(
+                $_POST['personel_id'],
+                $_POST['tarih'],
+                $_POST['vardiya_turu'],
+                $_POST['notlar'] ?? ''
+            );
+            $basari = 'Vardiya başarıyla eklendi.';
+        } catch (Exception $e) {
+            $hata = $e->getMessage();
         }
     }
-
-    // Takvim için ay ve yıl
-    $ay = isset($_GET['ay']) ? intval($_GET['ay']) : intval(date('m'));
-    $yil = isset($_GET['yil']) ? intval($_GET['yil']) : intval(date('Y'));
     ?>
 
     <div class="container">
-        <div class="header-nav">
-            <h1>Personel Vardiya Sistemi</h1>
-            <div>
-                <a href="personel.php" class="nav-btn">Personel Yönetimi</a>
-                <a href="izin.php" class="nav-btn">İzin Yönetimi</a>
-                <a href="rapor.php" class="nav-btn">İstatistikler ve Raporlar</a>
+        <h1>Vardiya Sistemi</h1>
+        
+        <nav>
+            <div class="user-info">
+                Hoş geldiniz, <?php echo htmlspecialchars($_SESSION['ad_soyad']); ?> 
+                (<?php echo htmlspecialchars($_SESSION['rol']); ?>)
+                <a href="cikis.php">Çıkış Yap</a>
             </div>
-        </div>
-
+            
+            <div class="menu">
+                <?php if (in_array($_SESSION['rol'], ['yonetici', 'admin'])): ?>
+                    <a href="personel.php">Personel Yönetimi</a>
+                <?php endif; ?>
+                
+                <?php if ($_SESSION['rol'] === 'admin'): ?>
+                    <a href="kullanicilar.php">Kullanıcı Yönetimi</a>
+                <?php endif; ?>
+                
+                <a href="izinler.php">İzin İşlemleri</a>
+                <a href="profil.php">Profil</a>
+            </div>
+        </nav>
+        
         <?php if ($hata): ?>
-            <div class="hata-mesaji">
-                <?php echo htmlspecialchars($hata); ?>
-            </div>
+            <div class="hata-mesaji"><?php echo htmlspecialchars($hata); ?></div>
         <?php endif; ?>
 
         <?php if ($basari): ?>
-            <div class="basari-mesaji">
-                <?php echo htmlspecialchars($basari); ?>
+            <div class="basari-mesaji"><?php echo htmlspecialchars($basari); ?></div>
+        <?php endif; ?>
+
+        <!-- Ay Seçimi -->
+        <div class="section">
+            <div class="ay-secimi">
+                <?php
+                $oncekiAy = $ay - 1;
+                $oncekiYil = $yil;
+                if ($oncekiAy < 1) {
+                    $oncekiAy = 12;
+                    $oncekiYil--;
+                }
+                
+                $sonrakiAy = $ay + 1;
+                $sonrakiYil = $yil;
+                if ($sonrakiAy > 12) {
+                    $sonrakiAy = 1;
+                    $sonrakiYil++;
+                }
+                ?>
+                <a href="?ay=<?php echo $oncekiAy; ?>&yil=<?php echo $oncekiYil; ?>" class="btn-small">&lt; Önceki Ay</a>
+                <span class="current-month">
+                    <?php echo date('F Y', mktime(0, 0, 0, $ay, 1, $yil)); ?>
+                </span>
+                <a href="?ay=<?php echo $sonrakiAy; ?>&yil=<?php echo $sonrakiYil; ?>" class="btn-small">Sonraki Ay &gt;</a>
+            </div>
+        </div>
+
+        <!-- Vardiya Ekleme Formu (Sadece yönetici ve admin için) -->
+        <?php if (in_array($_SESSION['rol'], ['yonetici', 'admin'])): ?>
+            <div class="section">
+                <h2>Yeni Vardiya Ekle</h2>
+                <form method="POST" class="form-section">
+                    <input type="hidden" name="islem" value="vardiya_ekle">
+                    
+                    <div class="form-group">
+                        <label>Personel:</label>
+                        <select name="personel_id" required>
+                            <?php echo personelListesiGetir(); ?>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tarih:</label>
+                        <input type="date" name="tarih" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Vardiya Türü:</label>
+                        <select name="vardiya_turu" required>
+                            <option value="sabah">Sabah (08:00-16:00)</option>
+                            <option value="aksam">Akşam (16:00-24:00)</option>
+                            <option value="gece">Gece (00:00-08:00)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notlar:</label>
+                        <textarea name="notlar"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Vardiya Ekle</button>
+                </form>
             </div>
         <?php endif; ?>
 
-        <!-- Takvim Navigasyonu -->
-        <div class="takvim-nav">
-            <?php
-            $oncekiAy = $ay - 1;
-            $oncekiYil = $yil;
-            if ($oncekiAy < 1) {
-                $oncekiAy = 12;
-                $oncekiYil--;
-            }
-
-            $sonrakiAy = $ay + 1;
-            $sonrakiYil = $yil;
-            if ($sonrakiAy > 12) {
-                $sonrakiAy = 1;
-                $sonrakiYil++;
-            }
-            ?>
-            <a href="?ay=<?php echo $oncekiAy; ?>&yil=<?php echo $oncekiYil; ?>" class="nav-btn">&lt; Önceki Ay</a>
-            <h2><?php echo date('F Y', mktime(0, 0, 0, $ay, 1, $yil)); ?></h2>
-            <a href="?ay=<?php echo $sonrakiAy; ?>&yil=<?php echo $sonrakiYil; ?>" class="nav-btn">Sonraki Ay &gt;</a>
-        </div>
-
         <!-- Takvim -->
-        <div class="takvim">
+        <div class="section">
+            <h2>Vardiya Takvimi</h2>
             <?php echo takvimOlustur($ay, $yil); ?>
-        </div>
-
-        <!-- Personel Ekleme Formu -->
-        <div class="form-section">
-            <h2>Yeni Personel Ekle</h2>
-            <form method="POST">
-                <input type="text" name="ad" placeholder="Ad" required>
-                <input type="text" name="soyad" placeholder="Soyad" required>
-                <button type="submit" name="yeni_personel">Personel Ekle</button>
-            </form>
         </div>
     </div>
 

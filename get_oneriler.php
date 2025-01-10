@@ -1,12 +1,31 @@
 <?php
 require_once 'functions.php';
+session_start();
 
-header('Content-Type: application/json');
+// Yetki kontrolü
+try {
+    yetkiKontrol(['yonetici', 'admin']);
+} catch (Exception $e) {
+    http_response_code(403);
+    echo json_encode(['hata' => 'Yetkiniz bulunmuyor.']);
+    exit;
+}
 
-if (isset($_GET['tarih']) && isset($_GET['vardiya_turu'])) {
-    $oneriler = akilliVardiyaOnerisiOlustur($_GET['tarih'], $_GET['vardiya_turu']);
-    echo json_encode($oneriler);
-} else {
+// Parametreleri al
+$tarih = $_GET['tarih'] ?? null;
+$vardiyaTuru = $_GET['vardiya_turu'] ?? null;
+
+if (!$tarih || !$vardiyaTuru) {
     http_response_code(400);
-    echo json_encode(['error' => 'Tarih ve vardiya türü gerekli']);
+    echo json_encode(['hata' => 'Geçersiz parametreler.']);
+    exit;
+}
+
+// Akıllı vardiya önerilerini getir
+try {
+    $oneriler = akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru);
+    echo json_encode($oneriler);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['hata' => $e->getMessage()]);
 } 
