@@ -111,23 +111,16 @@
                         <input type="date" name="tarih" value="<?php echo $vardiyaDetay['tarih']; ?>" required>
                     </div>
                     <div class="form-group">
-                        <label>Vardiya:</label>
-                        <div class="vardiya-butonlar">
+                        <label>Vardiya Türü:</label>
+                        <select name="vardiya_turu" required>
                             <?php
-                            $vardiyaTurleri = [
-                                'sabah' => 'Sabah (08:00-16:00)',
-                                'aksam' => 'Akşam (16:00-24:00)',
-                                'gece' => 'Gece (24:00-08:00)'
-                            ];
-                            foreach ($vardiyaTurleri as $tur => $aciklama) {
-                                $checked = $tur === $vardiyaDetay['vardiya_turu'] ? 'checked' : '';
-                                echo '<label>
-                                <input type="radio" name="vardiya_turu" value="' . $tur . '" ' . $checked . ' required>
-                                <span class="vardiya-btn ' . $tur . '">' . $aciklama . '</span>
-                            </label>';
+                            $vardiyaTurleri = vardiyaTurleriniGetir();
+                            foreach ($vardiyaTurleri as $id => $vardiya) {
+                                $selected = ($vardiyaDetay && $vardiyaDetay['vardiya_turu'] === $id) ? 'selected' : '';
+                                echo "<option value=\"$id\" $selected>{$vardiya['etiket']}</option>";
                             }
                             ?>
-                        </div>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Notlar:</label>
@@ -207,7 +200,7 @@
                     ?>
                         <tr>
                             <td><?php echo date('d.m.Y', strtotime($vardiya['tarih'])); ?></td>
-                            <td><?php echo $vardiyaTurleri[$vardiya['vardiya_turu']]; ?></td>
+                            <td><?php echo vardiyaTuruEtiketGetir($vardiya['vardiya_turu']); ?></td>
                             <td><?php echo htmlspecialchars($mevcutPersonel['ad'] . ' ' . $mevcutPersonel['soyad']); ?></td>
                             <td><?php echo htmlspecialchars($talepEden['ad'] . ' ' . $talepEden['soyad']); ?></td>
                             <td><?php echo htmlspecialchars($talep['aciklama']); ?></td>

@@ -1,14 +1,14 @@
 // Timestamp'i Türkçe tarih formatına çevirme
 function tarihFormatla(timestamp, format = 'kisa') {
     if (!timestamp) return '';
-    
+
     const tarih = new Date(timestamp * 1000);
-    
+
     const aylar = [
         'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
         'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
     ];
-    
+
     const gunler = [
         'Pazar', 'Pazartesi', 'Salı', 'Çarşamba',
         'Perşembe', 'Cuma', 'Cumartesi'
@@ -21,19 +21,19 @@ function tarihFormatla(timestamp, format = 'kisa') {
                 month: '2-digit',
                 year: 'numeric'
             }).format(tarih);
-            
+
         case 'uzun':
             return `${tarih.getDate()} ${aylar[tarih.getMonth()]} ${tarih.getFullYear()}`;
-            
+
         case 'tam':
             return `${gunler[tarih.getDay()]}, ${tarih.getDate()} ${aylar[tarih.getMonth()]} ${tarih.getFullYear()}`;
-            
+
         case 'saat':
             return new Intl.DateTimeFormat('tr-TR', {
                 hour: '2-digit',
                 minute: '2-digit'
             }).format(tarih);
-            
+
         case 'tam_saat':
             return `${tarih.getDate()} ${aylar[tarih.getMonth()]} ${tarih.getFullYear()} ${new Intl.DateTimeFormat('tr-TR', {
                 hour: '2-digit',

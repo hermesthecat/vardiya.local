@@ -9,4 +9,4 @@ if (isset($_GET['personel_id'])) {
 } else {
     http_response_code(400);
     echo json_encode(['error' => 'Personel ID gerekli']);
-} 
+}

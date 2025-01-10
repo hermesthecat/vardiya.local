@@ -7,4 +7,4 @@ kullaniciCikis();
 
 // Giriş sayfasına yönlendir
 header('Location: giris.php');
-exit; 
+exit;

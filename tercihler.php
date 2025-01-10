@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vardiya Tercihleri - Vardiya Sistemi</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <?php
     require_once 'functions.php';
-    
+
     $hata = '';
     $basari = '';
-    
+
     // POST işlemleri
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['personel_id'])) {
         $tercihler = [
@@ -20,7 +22,7 @@
             'tercih_edilmeyen_gunler' => isset($_POST['tercih_edilmeyen_gunler']) ? $_POST['tercih_edilmeyen_gunler'] : [],
             'max_ardisik_vardiya' => isset($_POST['max_ardisik_vardiya']) ? intval($_POST['max_ardisik_vardiya']) : 5
         ];
-        
+
         try {
             personelTercihKaydet($_POST['personel_id'], $tercihler);
             $basari = 'Tercihleriniz başarıyla kaydedildi.';
@@ -28,7 +30,7 @@
             $hata = $e->getMessage();
         }
     }
-    
+
     $personeller = tumPersonelleriGetir();
     ?>
 
@@ -66,18 +68,15 @@
                 <div class="form-group">
                     <label>Tercih Edilen Vardiyalar:</label>
                     <div class="checkbox-group">
-                        <label>
-                            <input type="checkbox" name="tercih_edilen_vardiyalar[]" value="sabah">
-                            Sabah (08:00-16:00)
-                        </label>
-                        <label>
-                            <input type="checkbox" name="tercih_edilen_vardiyalar[]" value="aksam">
-                            Akşam (16:00-24:00)
-                        </label>
-                        <label>
-                            <input type="checkbox" name="tercih_edilen_vardiyalar[]" value="gece">
-                            Gece (24:00-08:00)
-                        </label>
+                        <?php
+                        $vardiyaTurleri = vardiyaTurleriniGetir();
+                        foreach ($vardiyaTurleri as $id => $vardiya) {
+                            echo '<label>
+                                <input type="checkbox" name="tercih_edilen_vardiyalar[]" value="' . $id . '">
+                                ' . $vardiya['etiket'] . '
+                            </label>';
+                        }
+                        ?>
                     </div>
                 </div>
 
@@ -126,26 +125,27 @@
     </div>
 
     <script>
-    document.getElementById('personel_id').addEventListener('change', function() {
-        // AJAX ile personel tercihlerini getir
-        var personelId = this.value;
-        fetch('get_tercihler.php?personel_id=' + personelId)
-            .then(response => response.json())
-            .then(data => {
-                // Tercih edilen vardiyaları işaretle
-                document.querySelectorAll('input[name="tercih_edilen_vardiyalar[]"]').forEach(input => {
-                    input.checked = data.tercih_edilen_vardiyalar.includes(input.value);
+        document.getElementById('personel_id').addEventListener('change', function() {
+            // AJAX ile personel tercihlerini getir
+            var personelId = this.value;
+            fetch('get_tercihler.php?personel_id=' + personelId)
+                .then(response => response.json())
+                .then(data => {
+                    // Tercih edilen vardiyaları işaretle
+                    document.querySelectorAll('input[name="tercih_edilen_vardiyalar[]"]').forEach(input => {
+                        input.checked = data.tercih_edilen_vardiyalar.includes(input.value);
+                    });
+
+                    // Tercih edilmeyen günleri işaretle
+                    document.querySelectorAll('input[name="tercih_edilmeyen_gunler[]"]').forEach(input => {
+                        input.checked = data.tercih_edilmeyen_gunler.includes(input.value);
+                    });
+
+                    // Maksimum ardışık vardiyayı ayarla
+                    document.querySelector('input[name="max_ardisik_vardiya"]').value = data.max_ardisik_vardiya;
                 });
-                
-                // Tercih edilmeyen günleri işaretle
-                document.querySelectorAll('input[name="tercih_edilmeyen_gunler[]"]').forEach(input => {
-                    input.checked = data.tercih_edilmeyen_gunler.includes(input.value);
-                });
-                
-                // Maksimum ardışık vardiyayı ayarla
-                document.querySelector('input[name="max_ardisik_vardiya"]').value = data.max_ardisik_vardiya;
-            });
-    });
+        });
     </script>
 </body>
-</html> 
+
+</html>

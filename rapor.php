@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,27 +8,28 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <?php
     require_once 'functions.php';
-    
+
     // Tarih parametreleri
     $ay = isset($_GET['ay']) ? intval($_GET['ay']) : intval(date('m'));
     $yil = isset($_GET['yil']) ? intval($_GET['yil']) : intval(date('Y'));
-    
+
     // Rapor verilerini al
     $baslangicTarih = sprintf('%04d-%02d-01', $yil, $ay);
     $bitisTarih = date('Y-m-t', strtotime($baslangicTarih));
-    
+
     $aylikRapor = aylikCalismaRaporu($ay, $yil);
     $vardiyaDagilimi = vardiyaTuruDagilimi($baslangicTarih, $bitisTarih);
     $personelDagilimi = personelVardiyaDagilimi($baslangicTarih, $bitisTarih);
-    
+
     // Export işlemleri
     if (isset($_POST['export'])) {
         $format = $_POST['format'];
         $dosyaAdi = sprintf('vardiya_raporu_%04d_%02d', $yil, $ay);
-        
+
         if ($format === 'excel') {
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename=' . $dosyaAdi . '.csv');
@@ -98,20 +100,25 @@
                         <tr>
                             <th>Personel</th>
                             <th>Toplam Saat</th>
-                            <th>Sabah Vardiyası</th>
-                            <th>Akşam Vardiyası</th>
-                            <th>Gece Vardiyası</th>
+                            <?php
+                            $vardiyaTurleri = vardiyaTurleriniGetir();
+                            foreach ($vardiyaTurleri as $id => $vardiya) {
+                                echo '<th>' . htmlspecialchars($vardiya['etiket']) . '</th>';
+                            }
+                            ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($aylikRapor as $personelRapor): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($personelRapor['personel']); ?></td>
-                            <td><?php echo $personelRapor['toplam_saat']; ?> saat</td>
-                            <td><?php echo $personelRapor['vardiyalar']['sabah']; ?></td>
-                            <td><?php echo $personelRapor['vardiyalar']['aksam']; ?></td>
-                            <td><?php echo $personelRapor['vardiyalar']['gece']; ?></td>
-                        </tr>
+                            <tr>
+                                <td><?php echo htmlspecialchars($personelRapor['personel']); ?></td>
+                                <td><?php echo $personelRapor['toplam_saat']; ?> saat</td>
+                                <?php
+                                foreach ($vardiyaTurleri as $id => $vardiya) {
+                                    echo '<td>' . ($personelRapor['vardiyalar'][$id] ?? 0) . '</td>';
+                                }
+                                ?>
+                            </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -135,91 +142,87 @@
     </div>
 
     <script>
-    // Vardiya Türü Dağılımı Grafiği
-    new Chart(document.getElementById('vardiyaDagilimGrafik'), {
-        type: 'pie',
-        data: {
-            labels: ['Sabah', 'Akşam', 'Gece'],
-            datasets: [{
-                data: [
-                    <?php echo $vardiyaDagilimi['sabah']; ?>,
-                    <?php echo $vardiyaDagilimi['aksam']; ?>,
-                    <?php echo $vardiyaDagilimi['gece']; ?>
-                ],
-                backgroundColor: ['#4CAF50', '#2196F3', '#9C27B0']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+        // Vardiya türlerini PHP'den al
+        const vardiyaTurleri = <?php echo json_encode($vardiyaTurleri); ?>;
+        const vardiyaEtiketleri = Object.values(vardiyaTurleri).map(v => v.etiket);
+        const vardiyaRenkleri = Object.values(vardiyaTurleri).map(v => v.renk || '#' + Math.floor(Math.random() * 16777215).toString(16));
 
-    // Personel Vardiya Dağılımı Grafiği
-    new Chart(document.getElementById('personelDagilimGrafik'), {
-        type: 'bar',
-        data: {
-            labels: [<?php
-                $labels = [];
-                foreach ($personelDagilimi as $personel) {
-                    $labels[] = "'" . addslashes($personel['personel']) . "'";
-                }
-                echo implode(',', $labels);
-            ?>],
-            datasets: [{
-                label: 'Sabah',
-                data: [<?php
-                    $data = [];
-                    foreach ($personelDagilimi as $personel) {
-                        $data[] = $personel['vardiyalar']['sabah'];
-                    }
-                    echo implode(',', $data);
-                ?>],
-                backgroundColor: '#4CAF50'
-            }, {
-                label: 'Akşam',
-                data: [<?php
-                    $data = [];
-                    foreach ($personelDagilimi as $personel) {
-                        $data[] = $personel['vardiyalar']['aksam'];
-                    }
-                    echo implode(',', $data);
-                ?>],
-                backgroundColor: '#2196F3'
-            }, {
-                label: 'Gece',
-                data: [<?php
-                    $data = [];
-                    foreach ($personelDagilimi as $personel) {
-                        $data[] = $personel['vardiyalar']['gece'];
-                    }
-                    echo implode(',', $data);
-                ?>],
-                backgroundColor: '#9C27B0'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    stacked: true
-                },
-                y: {
-                    stacked: true,
-                    beginAtZero: true
-                }
+        // Vardiya Türü Dağılımı Grafiği
+        new Chart(document.getElementById('vardiyaDagilimGrafik'), {
+            type: 'pie',
+            data: {
+                labels: vardiyaEtiketleri,
+                datasets: [{
+                    data: [
+                        <?php
+                        $data = [];
+                        foreach ($vardiyaTurleri as $id => $vardiya) {
+                            $data[] = $vardiyaDagilimi[$id] ?? 0;
+                        }
+                        echo implode(',', $data);
+                        ?>
+                    ],
+                    backgroundColor: vardiyaRenkleri
+                }]
             },
-            plugins: {
-                legend: {
-                    position: 'bottom'
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
                 }
             }
-        }
-    });
+        });
+
+        // Personel Vardiya Dağılımı Grafiği
+        new Chart(document.getElementById('personelDagilimGrafik'), {
+            type: 'bar',
+            data: {
+                labels: [<?php
+                            $labels = [];
+                            foreach ($personelDagilimi as $personel) {
+                                $labels[] = "'" . addslashes($personel['personel']) . "'";
+                            }
+                            echo implode(',', $labels);
+                            ?>],
+                datasets: [
+                    <?php
+                    $datasetStr = [];
+                    foreach ($vardiyaTurleri as $id => $vardiya) {
+                        $data = [];
+                        foreach ($personelDagilimi as $personel) {
+                            $data[] = $personel['vardiyalar'][$id] ?? 0;
+                        }
+                        $datasetStr[] = "{
+                            label: '" . addslashes($vardiya['etiket']) . "',
+                            data: [" . implode(',', $data) . "],
+                            backgroundColor: '" . ($vardiya['renk'] ?? '#' . substr(md5($id), 0, 6)) . "'
+                        }";
+                    }
+                    echo implode(',', $datasetStr);
+                    ?>
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
     </script>
 </body>
-</html> 
+
+</html>

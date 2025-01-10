@@ -42,7 +42,7 @@ foreach ($abonelikler as $index => $abone) {
 // Bildirimleri gönder ve sonuçları kontrol et
 foreach ($webPush->flush() as $report) {
     $endpoint = $report->getRequest()->getUri()->__toString();
-    
+
     if (!$report->isSuccess()) {
         // Başarısız gönderimler için endpoint'i kaydet
         $basarisizAbonelikler[] = $endpoint;
@@ -66,4 +66,4 @@ echo json_encode([
     'success' => true,
     'message' => 'Bildirimler gönderildi',
     'failed_endpoints' => $basarisizAbonelikler
-]); 
+]);

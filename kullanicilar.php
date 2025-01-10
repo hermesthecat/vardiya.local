@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,12 @@
     <link rel="stylesheet" href="style.css">
     <script src="js/date_functions.js"></script>
 </head>
+
 <body>
     <?php
     require_once 'functions.php';
     session_start();
-    
+
     // Sadece admin rolündeki kullanıcılar erişebilir
     try {
         yetkiKontrol(['admin']);
@@ -19,10 +21,10 @@
         header('Location: giris.php');
         exit;
     }
-    
+
     $hata = '';
     $basari = '';
-    
+
     // Yeni kullanıcı ekleme
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem']) && $_POST['islem'] === 'ekle') {
         try {
@@ -31,7 +33,7 @@
                 'tercih_edilen_vardiyalar' => $_POST['tercih_edilen_vardiyalar'] ?? [],
                 'tercih_edilmeyen_gunler' => $_POST['tercih_edilmeyen_gunler'] ?? []
             ];
-            
+
             kullaniciOlustur(
                 $_POST['ad'],
                 $_POST['soyad'],
@@ -46,7 +48,7 @@
             $hata = $e->getMessage();
         }
     }
-    
+
     // Kullanıcı güncelleme
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem']) && $_POST['islem'] === 'guncelle') {
         try {
@@ -55,7 +57,7 @@
                 'tercih_edilen_vardiyalar' => $_POST['tercih_edilen_vardiyalar'] ?? [],
                 'tercih_edilmeyen_gunler' => $_POST['tercih_edilmeyen_gunler'] ?? []
             ];
-            
+
             kullaniciGuncelle(
                 $_POST['kullanici_id'],
                 $_POST['ad'],
@@ -70,7 +72,7 @@
             $hata = $e->getMessage();
         }
     }
-    
+
     // Mevcut kullanıcıları getir
     $data = veriOku();
     $kullanicilar = $data['personel'] ?? [];
@@ -78,11 +80,11 @@
 
     <div class="container">
         <h1>Kullanıcı Yönetimi</h1>
-        
+
         <nav>
             <a href="index.php">Ana Sayfa</a>
         </nav>
-        
+
         <?php if ($hata): ?>
             <div class="hata-mesaji"><?php echo htmlspecialchars($hata); ?></div>
         <?php endif; ?>
@@ -96,32 +98,32 @@
             <h2>Yeni Kullanıcı Ekle</h2>
             <form method="POST" class="form-section">
                 <input type="hidden" name="islem" value="ekle">
-                
+
                 <div class="form-group">
                     <label>Ad:</label>
                     <input type="text" name="ad" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Soyad:</label>
                     <input type="text" name="soyad" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>E-posta:</label>
                     <input type="email" name="email" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Telefon:</label>
                     <input type="tel" name="telefon" pattern="[0-9]{10}" required placeholder="5XX1234567">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Şifre:</label>
                     <input type="password" name="sifre" required minlength="6">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Rol:</label>
                     <select name="rol" required>
@@ -138,16 +140,19 @@
                             <input type="checkbox" name="bildirimler" value="1">
                             Bildirimleri aktif et
                         </label>
-                        
+
                         <div class="tercih-grup">
                             <label>Tercih Edilen Vardiyalar:</label>
                             <select name="tercih_edilen_vardiyalar[]" multiple>
-                                <option value="sabah">Sabah (08:00-16:00)</option>
-                                <option value="aksam">Akşam (16:00-24:00)</option>
-                                <option value="gece">Gece (00:00-08:00)</option>
+                                <?php
+                                $vardiyaTurleri = vardiyaTurleriniGetir();
+                                foreach ($vardiyaTurleri as $id => $vardiya) {
+                                    echo "<option value=\"$id\">{$vardiya['etiket']}</option>";
+                                }
+                                ?>
                             </select>
                         </div>
-                        
+
                         <div class="tercih-grup">
                             <label>Tercih Edilmeyen Günler:</label>
                             <select name="tercih_edilmeyen_gunler[]" multiple>
@@ -162,7 +167,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <button type="submit" class="submit-btn">Kullanıcı Ekle</button>
             </form>
         </div>
@@ -211,17 +216,17 @@
             <form method="POST" class="form-section">
                 <input type="hidden" name="islem" value="guncelle">
                 <input type="hidden" name="kullanici_id" id="duzenle_kullanici_id">
-                
+
                 <div class="form-group">
                     <label>Ad:</label>
                     <input type="text" name="ad" id="duzenle_ad" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Soyad:</label>
                     <input type="text" name="soyad" id="duzenle_soyad" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>E-posta:</label>
                     <input type="email" name="email" id="duzenle_email" required>
@@ -231,7 +236,7 @@
                     <label>Telefon:</label>
                     <input type="tel" name="telefon" id="duzenle_telefon" pattern="[0-9]{10}" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Rol:</label>
                     <select name="rol" id="duzenle_rol" required>
@@ -248,16 +253,18 @@
                             <input type="checkbox" name="bildirimler" id="duzenle_bildirimler" value="1">
                             Bildirimleri aktif et
                         </label>
-                        
+
                         <div class="tercih-grup">
                             <label>Tercih Edilen Vardiyalar:</label>
                             <select name="tercih_edilen_vardiyalar[]" id="duzenle_tercih_edilen_vardiyalar" multiple>
-                                <option value="sabah">Sabah (08:00-16:00)</option>
-                                <option value="aksam">Akşam (16:00-24:00)</option>
-                                <option value="gece">Gece (00:00-08:00)</option>
+                                <?php
+                                foreach ($vardiyaTurleri as $id => $vardiya) {
+                                    echo "<option value=\"$id\">{$vardiya['etiket']}</option>";
+                                }
+                                ?>
                             </select>
                         </div>
-                        
+
                         <div class="tercih-grup">
                             <label>Tercih Edilmeyen Günler:</label>
                             <select name="tercih_edilmeyen_gunler[]" id="duzenle_tercih_edilmeyen_gunler" multiple>
@@ -272,55 +279,56 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <button type="submit" class="submit-btn">Güncelle</button>
             </form>
         </div>
     </div>
 
     <script>
-    // Modal işlemleri için JavaScript
-    const modal = document.getElementById('duzenleModal');
-    const span = document.getElementsByClassName('close')[0];
-    
-    function kullaniciDuzenle(kullaniciId) {
-        const kullanicilar = <?php echo json_encode($kullanicilar); ?>;
-        const kullanici = kullanicilar.find(k => k.id === kullaniciId);
-        
-        if (kullanici) {
-            document.getElementById('duzenle_kullanici_id').value = kullanici.id;
-            document.getElementById('duzenle_ad').value = kullanici.ad;
-            document.getElementById('duzenle_soyad').value = kullanici.soyad;
-            document.getElementById('duzenle_email').value = kullanici.email;
-            document.getElementById('duzenle_telefon').value = kullanici.telefon;
-            document.getElementById('duzenle_rol').value = kullanici.yetki;
-            document.getElementById('duzenle_bildirimler').checked = kullanici.tercihler.bildirimler;
+        // Modal işlemleri için JavaScript
+        const modal = document.getElementById('duzenleModal');
+        const span = document.getElementsByClassName('close')[0];
 
-            // Tercih edilen vardiyaları seç
-            const tercihEdilenVardiyalar = document.getElementById('duzenle_tercih_edilen_vardiyalar');
-            Array.from(tercihEdilenVardiyalar.options).forEach(option => {
-                option.selected = kullanici.tercihler.tercih_edilen_vardiyalar.includes(option.value);
-            });
+        function kullaniciDuzenle(kullaniciId) {
+            const kullanicilar = <?php echo json_encode($kullanicilar); ?>;
+            const kullanici = kullanicilar.find(k => k.id === kullaniciId);
 
-            // Tercih edilmeyen günleri seç
-            const tercihEdilmeyenGunler = document.getElementById('duzenle_tercih_edilmeyen_gunler');
-            Array.from(tercihEdilmeyenGunler.options).forEach(option => {
-                option.selected = kullanici.tercihler.tercih_edilmeyen_gunler.includes(option.value);
-            });
-            
-            modal.style.display = 'block';
+            if (kullanici) {
+                document.getElementById('duzenle_kullanici_id').value = kullanici.id;
+                document.getElementById('duzenle_ad').value = kullanici.ad;
+                document.getElementById('duzenle_soyad').value = kullanici.soyad;
+                document.getElementById('duzenle_email').value = kullanici.email;
+                document.getElementById('duzenle_telefon').value = kullanici.telefon;
+                document.getElementById('duzenle_rol').value = kullanici.yetki;
+                document.getElementById('duzenle_bildirimler').checked = kullanici.tercihler.bildirimler;
+
+                // Tercih edilen vardiyaları seç
+                const tercihEdilenVardiyalar = document.getElementById('duzenle_tercih_edilen_vardiyalar');
+                Array.from(tercihEdilenVardiyalar.options).forEach(option => {
+                    option.selected = kullanici.tercihler.tercih_edilen_vardiyalar.includes(option.value);
+                });
+
+                // Tercih edilmeyen günleri seç
+                const tercihEdilmeyenGunler = document.getElementById('duzenle_tercih_edilmeyen_gunler');
+                Array.from(tercihEdilmeyenGunler.options).forEach(option => {
+                    option.selected = kullanici.tercihler.tercih_edilmeyen_gunler.includes(option.value);
+                });
+
+                modal.style.display = 'block';
+            }
         }
-    }
-    
-    span.onclick = function() {
-        modal.style.display = 'none';
-    }
-    
-    window.onclick = function(event) {
-        if (event.target == modal) {
+
+        span.onclick = function() {
             modal.style.display = 'none';
         }
-    }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
     </script>
 </body>
-</html> 
+
+</html>

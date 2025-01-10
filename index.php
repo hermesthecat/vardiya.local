@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personel Vardiya Sistemi</title>
     <link rel="stylesheet" href="style.css">
-    
+
     <!-- PWA için gerekli meta etiketleri -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4caf50">
@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Vardiya">
     <link rel="apple-touch-icon" href="icons/icon-152x152.png">
-    
+
     <!-- PWA ve Bildirim Scripti -->
     <script>
         // Service Worker Kaydı
@@ -97,20 +97,20 @@
     <?php
     require_once 'functions.php';
     session_start();
-    
+
     // Oturum kontrolü
     if (!isset($_SESSION['kullanici_id'])) {
         header('Location: giris.php');
         exit;
     }
-    
+
     $hata = '';
     $basari = '';
-    
+
     // Mevcut ay ve yıl
     $ay = isset($_GET['ay']) ? (int)$_GET['ay'] : (int)date('m');
     $yil = isset($_GET['yil']) ? (int)$_GET['yil'] : (int)date('Y');
-    
+
     // Vardiya ekleme işlemi
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem']) && $_POST['islem'] === 'vardiya_ekle') {
         try {
@@ -118,7 +118,7 @@
             if (!in_array($_SESSION['rol'], ['yonetici', 'admin'])) {
                 throw new Exception('Vardiya ekleme yetkiniz bulunmuyor.');
             }
-            
+
             vardiyaEkle(
                 $_POST['personel_id'],
                 $_POST['tarih'],
@@ -134,28 +134,28 @@
 
     <div class="container">
         <h1>Vardiya Sistemi</h1>
-        
+
         <nav>
             <div class="user-info">
-                Hoş geldiniz, <?php echo htmlspecialchars($_SESSION['ad_soyad']); ?> 
+                Hoş geldiniz, <?php echo htmlspecialchars($_SESSION['ad_soyad']); ?>
                 (<?php echo htmlspecialchars($_SESSION['rol']); ?>)
                 <a href="cikis.php">Çıkış Yap</a>
             </div>
-            
+
             <div class="menu">
                 <?php if (in_array($_SESSION['rol'], ['yonetici', 'admin'])): ?>
                     <a href="personel.php">Personel Yönetimi</a>
                 <?php endif; ?>
-                
+
                 <?php if ($_SESSION['rol'] === 'admin'): ?>
                     <a href="kullanicilar.php">Kullanıcı Yönetimi</a>
                 <?php endif; ?>
-                
+
                 <a href="izinler.php">İzin İşlemleri</a>
                 <a href="profil.php">Profil</a>
             </div>
         </nav>
-        
+
         <?php if ($hata): ?>
             <div class="hata-mesaji"><?php echo htmlspecialchars($hata); ?></div>
         <?php endif; ?>
@@ -174,7 +174,7 @@
                     $oncekiAy = 12;
                     $oncekiYil--;
                 }
-                
+
                 $sonrakiAy = $ay + 1;
                 $sonrakiYil = $yil;
                 if ($sonrakiAy > 12) {
@@ -196,33 +196,39 @@
                 <h2>Yeni Vardiya Ekle</h2>
                 <form method="POST" class="form-section">
                     <input type="hidden" name="islem" value="vardiya_ekle">
-                    
+
                     <div class="form-group">
                         <label>Personel:</label>
                         <select name="personel_id" required>
                             <?php echo personelListesiGetir(); ?>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Tarih:</label>
                         <input type="date" name="tarih" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Vardiya Türü:</label>
                         <select name="vardiya_turu" required>
-                            <option value="sabah">Sabah (08:00-16:00)</option>
-                            <option value="aksam">Akşam (16:00-24:00)</option>
-                            <option value="gece">Gece (00:00-08:00)</option>
+                            <?php
+                            $vardiyaTurleri = vardiyaTurleriniGetir();
+                            foreach ($vardiyaTurleri as $id => $vardiya) {
+                                echo '<option value="' . htmlspecialchars($id) . '">' .
+                                    htmlspecialchars($vardiya['etiket']) . ' (' .
+                                    htmlspecialchars($vardiya['baslangic']) . '-' .
+                                    htmlspecialchars($vardiya['bitis']) . ')</option>';
+                            }
+                            ?>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Notlar:</label>
                         <textarea name="notlar"></textarea>
                     </div>
-                    
+
                     <button type="submit" class="submit-btn">Vardiya Ekle</button>
                 </form>
             </div>
@@ -240,7 +246,7 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>Vardiya Ekle</h2>
-            
+
             <!-- Akıllı Vardiya Önerileri -->
             <div id="vardiyaOnerileri" class="oneri-section" style="display: none;">
                 <h3>Önerilen Personeller</h3>
@@ -258,18 +264,17 @@
                 <div class="form-group">
                     <label>Vardiya:</label>
                     <div class="vardiya-butonlar">
-                        <label>
-                            <input type="radio" name="vardiya_turu" value="sabah" required>
-                            <span class="vardiya-btn sabah">Sabah (08:00-16:00)</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="vardiya_turu" value="aksam" required>
-                            <span class="vardiya-btn aksam">Akşam (16:00-24:00)</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="vardiya_turu" value="gece" required>
-                            <span class="vardiya-btn gece">Gece (24:00-08:00)</span>
-                        </label>
+                        <?php
+                        foreach ($vardiyaTurleri as $id => $vardiya) {
+                            echo '<label>
+                                <input type="radio" name="vardiya_turu" value="' . htmlspecialchars($id) . '" required>
+                                <span class="vardiya-btn ' . htmlspecialchars($id) . '">' .
+                                htmlspecialchars($vardiya['etiket']) . ' (' .
+                                htmlspecialchars($vardiya['baslangic']) . '-' .
+                                htmlspecialchars($vardiya['bitis']) . ')</span>
+                            </label>';
+                        }
+                        ?>
                     </div>
                 </div>
                 <button type="submit" name="vardiya_ekle" class="submit-btn">Vardiya Ekle</button>
@@ -364,35 +369,35 @@
     </script>
 
     <script>
-    // Tarih formatlarının kullanım örnekleri
-    document.addEventListener('DOMContentLoaded', function() {
-        // Tarihleri timestamp'den Türkçe formata çevirme
-        const tarihElementleri = document.querySelectorAll('[data-timestamp]');
-        tarihElementleri.forEach(element => {
-            const timestamp = element.getAttribute('data-timestamp');
-            const format = element.getAttribute('data-format') || 'kisa';
-            element.textContent = tarihFormatla(timestamp, format);
-        });
+        // Tarih formatlarının kullanım örnekleri
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tarihleri timestamp'den Türkçe formata çevirme
+            const tarihElementleri = document.querySelectorAll('[data-timestamp]');
+            tarihElementleri.forEach(element => {
+                const timestamp = element.getAttribute('data-timestamp');
+                const format = element.getAttribute('data-format') || 'kisa';
+                element.textContent = tarihFormatla(timestamp, format);
+            });
 
-        // Form inputlarını düzenleme
-        const tarihInputlari = document.querySelectorAll('input[type="date"]');
-        tarihInputlari.forEach(input => {
-            // Varsayılan değeri varsa
-            if (input.getAttribute('data-timestamp')) {
-                const timestamp = input.getAttribute('data-timestamp');
-                input.value = timestampToInputValue(timestamp);
-            }
+            // Form inputlarını düzenleme
+            const tarihInputlari = document.querySelectorAll('input[type="date"]');
+            tarihInputlari.forEach(input => {
+                // Varsayılan değeri varsa
+                if (input.getAttribute('data-timestamp')) {
+                    const timestamp = input.getAttribute('data-timestamp');
+                    input.value = timestampToInputValue(timestamp);
+                }
 
-            // Form gönderilirken
-            input.closest('form')?.addEventListener('submit', function(e) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = input.name + '_timestamp';
-                hiddenInput.value = inputValueToTimestamp(input.value);
-                this.appendChild(hiddenInput);
+                // Form gönderilirken
+                input.closest('form')?.addEventListener('submit', function(e) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = input.name + '_timestamp';
+                    hiddenInput.value = inputValueToTimestamp(input.value);
+                    this.appendChild(hiddenInput);
+                });
             });
         });
-    });
     </script>
 </body>
 
