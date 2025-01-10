@@ -40,7 +40,7 @@ function vardiyaDuzenle($vardiyaId, $personelId, $tarih, $vardiyaTuru, $notlar =
         throw new Exception('Bu personelin seçilen tarihte başka bir vardiyası bulunuyor.');
     }
 
-    // Ardışık çalışma kontrolü
+    // Ardışık çalışma günlerini kontrol et
     if (!ardisikCalismaGunleriniKontrolEt($personelId, $tarih, $vardiyaId)) {
         throw new Exception('Bu personel 6 gün üst üste çalıştığı için bu tarihe vardiya eklenemez. En az 1 gün izin kullanması gerekiyor.');
     }
@@ -554,4 +554,147 @@ function izinTurleriniGetir()
         'hastalik' => 'Hastalık İzni',
         'idari' => 'İdari İzin'
     ];
+}
+
+// Vardiya saatlerini hesapla
+function vardiyaSaatleriHesapla($vardiyaTuru) {
+    $saatler = [
+        'sabah' => ['baslangic' => '08:00', 'bitis' => '16:00', 'sure' => 8],
+        'aksam' => ['baslangic' => '16:00', 'bitis' => '24:00', 'sure' => 8],
+        'gece' => ['baslangic' => '00:00', 'bitis' => '08:00', 'sure' => 8]
+    ];
+    return $saatler[$vardiyaTuru];
+}
+
+// Aylık çalışma saatleri raporu
+function aylikCalismaRaporu($ay, $yil) {
+    $data = veriOku();
+    $rapor = [];
+    
+    foreach ($data['personel'] as $personel) {
+        $rapor[$personel['id']] = [
+            'personel' => $personel['ad'] . ' ' . $personel['soyad'],
+            'toplam_saat' => 0,
+            'vardiyalar' => [
+                'sabah' => 0,
+                'aksam' => 0,
+                'gece' => 0
+            ]
+        ];
+    }
+    
+    $baslangic = sprintf('%04d-%02d-01', $yil, $ay);
+    $bitis = date('Y-m-t', strtotime($baslangic));
+    
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['tarih'] >= $baslangic && $vardiya['tarih'] <= $bitis) {
+            $saatler = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
+            $rapor[$vardiya['personel_id']]['toplam_saat'] += $saatler['sure'];
+            $rapor[$vardiya['personel_id']]['vardiyalar'][$vardiya['vardiya_turu']]++;
+        }
+    }
+    
+    return $rapor;
+}
+
+// Vardiya türlerine göre dağılım
+function vardiyaTuruDagilimi($baslangicTarih, $bitisTarih) {
+    $data = veriOku();
+    $dagilim = [
+        'sabah' => 0,
+        'aksam' => 0,
+        'gece' => 0
+    ];
+    
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['tarih'] >= $baslangicTarih && $vardiya['tarih'] <= $bitisTarih) {
+            $dagilim[$vardiya['vardiya_turu']]++;
+        }
+    }
+    
+    return $dagilim;
+}
+
+// Personel bazlı vardiya dağılımı
+function personelVardiyaDagilimi($baslangicTarih, $bitisTarih) {
+    $data = veriOku();
+    $dagilim = [];
+    
+    foreach ($data['personel'] as $personel) {
+        $dagilim[$personel['id']] = [
+            'personel' => $personel['ad'] . ' ' . $personel['soyad'],
+            'vardiyalar' => [
+                'sabah' => 0,
+                'aksam' => 0,
+                'gece' => 0
+            ],
+            'toplam' => 0
+        ];
+    }
+    
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['tarih'] >= $baslangicTarih && $vardiya['tarih'] <= $bitisTarih) {
+            $dagilim[$vardiya['personel_id']]['vardiyalar'][$vardiya['vardiya_turu']]++;
+            $dagilim[$vardiya['personel_id']]['toplam']++;
+        }
+    }
+    
+    return $dagilim;
+}
+
+// Excel raporu oluştur
+function excelRaporuOlustur($ay, $yil) {
+    $rapor = aylikCalismaRaporu($ay, $yil);
+    $vardiyaTurleri = ['sabah' => 'Sabah', 'aksam' => 'Akşam', 'gece' => 'Gece'];
+    
+    $csv = "Personel,Toplam Saat,Sabah Vardiyası,Akşam Vardiyası,Gece Vardiyası\n";
+    
+    foreach ($rapor as $personelRapor) {
+        $csv .= sprintf(
+            "%s,%d,%d,%d,%d\n",
+            $personelRapor['personel'],
+            $personelRapor['toplam_saat'],
+            $personelRapor['vardiyalar']['sabah'],
+            $personelRapor['vardiyalar']['aksam'],
+            $personelRapor['vardiyalar']['gece']
+        );
+    }
+    
+    return $csv;
+}
+
+// PDF raporu için HTML oluştur
+function pdfRaporuIcinHtmlOlustur($ay, $yil) {
+    $rapor = aylikCalismaRaporu($ay, $yil);
+    $vardiyaTurleri = ['sabah' => 'Sabah', 'aksam' => 'Akşam', 'gece' => 'Gece'];
+    
+    $html = '<h1>Aylık Çalışma Raporu - ' . date('F Y', mktime(0, 0, 0, $ay, 1, $yil)) . '</h1>';
+    $html .= '<table border="1" cellpadding="5" cellspacing="0" width="100%">';
+    $html .= '<tr>
+        <th>Personel</th>
+        <th>Toplam Saat</th>
+        <th>Sabah Vardiyası</th>
+        <th>Akşam Vardiyası</th>
+        <th>Gece Vardiyası</th>
+    </tr>';
+    
+    foreach ($rapor as $personelRapor) {
+        $html .= sprintf(
+            '<tr>
+                <td>%s</td>
+                <td>%d</td>
+                <td>%d</td>
+                <td>%d</td>
+                <td>%d</td>
+            </tr>',
+            $personelRapor['personel'],
+            $personelRapor['toplam_saat'],
+            $personelRapor['vardiyalar']['sabah'],
+            $personelRapor['vardiyalar']['aksam'],
+            $personelRapor['vardiyalar']['gece']
+        );
+    }
+    
+    $html .= '</table>';
+    return $html;
 }

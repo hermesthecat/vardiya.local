@@ -41,6 +41,7 @@
             <div>
                 <a href="personel.php" class="nav-btn">Personel Yönetimi</a>
                 <a href="izin.php" class="nav-btn">İzin Yönetimi</a>
+                <a href="rapor.php" class="nav-btn">İstatistikler ve Raporlar</a>
             </div>
         </div>
 
