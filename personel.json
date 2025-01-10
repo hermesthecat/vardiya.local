@@ -29,19 +29,35 @@
     {
       "id": "64f1a2b3c4d7",
       "ad": "Mehmet",
-      "soyad": "Kaya"
+      "soyad": "Kaya",
+      "yetki": "personel",
+      "email": "mehmet@firma.com",
+      "telefon": "5551234569",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["gece"],
+        "tercih_edilmeyen_gunler": ["cumartesi"]
+      }
     },
     {
       "id": "64f1a2b3c4d8",
       "ad": "Fatma",
-      "soyad": "Çelik"
+      "soyad": "Çelik",
+      "yetki": "personel",
+      "email": "fatma@firma.com",
+      "telefon": "5551234570",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["sabah", "aksam"],
+        "tercih_edilmeyen_gunler": ["pazar"]
+      }
     }
   ],
   "vardiyalar": [
     {
       "id": "64f1a2b3c4e1",
       "personel_id": "64f1a2b3c4d5",
-      "tarih": "2024-01-15",
+      "tarih": 1705276800,
       "vardiya_turu": "sabah",
       "notlar": "Özel proje toplantısı var",
       "durum": "onaylandi"
@@ -49,7 +65,7 @@
     {
       "id": "64f1a2b3c4e2",
       "personel_id": "64f1a2b3c4d6",
-      "tarih": "2024-01-15",
+      "tarih": 1705276800,
       "vardiya_turu": "aksam",
       "notlar": "",
       "durum": "onaylandi"
@@ -57,33 +73,36 @@
     {
       "id": "64f1a2b3c4e3",
       "personel_id": "64f1a2b3c4d7",
-      "tarih": "2024-01-15",
-      "vardiya_turu": "gece"
+      "tarih": 1705276800,
+      "vardiya_turu": "gece",
+      "durum": "onaylandi"
     },
     {
       "id": "64f1a2b3c4e4",
       "personel_id": "64f1a2b3c4d8",
-      "tarih": "2024-01-16",
-      "vardiya_turu": "sabah"
+      "tarih": 1705363200,
+      "vardiya_turu": "sabah",
+      "durum": "onaylandi"
     },
     {
       "id": "64f1a2b3c4e5",
       "personel_id": "64f1a2b3c4d5",
-      "tarih": "2024-01-16",
-      "vardiya_turu": "aksam"
+      "tarih": 1705363200,
+      "vardiya_turu": "aksam",
+      "durum": "onaylandi"
     }
   ],
   "izinler": [
     {
       "id": "64f1a2b3c4f1",
       "personel_id": "64f1a2b3c4d5",
-      "baslangic_tarihi": "2024-02-01",
-      "bitis_tarihi": "2024-02-05",
+      "baslangic_tarihi": 1706745600,
+      "bitis_tarihi": 1707091200,
       "izin_turu": "yillik",
       "aciklama": "Yıllık izin",
       "durum": "onaylandi",
       "onaylayan_id": "64f1a2b3c4d6",
-      "onay_tarihi": "2024-01-10"
+      "onay_tarihi": 1704844800
     }
   ],
   "vardiya_talepleri": [
@@ -91,23 +110,23 @@
       "id": "64f1a2b3c4g1",
       "talep_eden_id": "64f1a2b3c4d5",
       "degisim_yapilacak_vardiya_id": "64f1a2b3c4e1",
-      "talep_edilen_tarih": "2024-01-20",
+      "talep_edilen_tarih": 1705708800,
       "talep_edilen_vardiya_turu": "aksam",
       "aciklama": "Özel durum nedeniyle değişim talebi",
       "durum": "beklemede",
-      "talep_tarihi": "2024-01-08"
+      "talep_tarihi": 1704672000
     }
   ],
   "izin_talepleri": [
     {
       "id": "64f1a2b3c4h1",
       "personel_id": "64f1a2b3c4d6",
-      "baslangic_tarihi": "2024-03-01",
-      "bitis_tarihi": "2024-03-03",
+      "baslangic_tarihi": 1709251200,
+      "bitis_tarihi": 1709424000,
       "izin_turu": "yillik",
       "aciklama": "Aile ziyareti",
       "durum": "beklemede",
-      "talep_tarihi": "2024-01-10"
+      "talep_tarihi": 1704844800
     }
   ],
   "bildirim_abonelikleri": [
@@ -116,8 +135,8 @@
       "endpoint": "https://fcm.googleapis.com/fcm/send/...",
       "auth": "auth_key_1",
       "p256dh": "p256dh_key_1",
-      "kayit_tarihi": "2024-01-10",
-      "son_guncelleme": "2024-01-10"
+      "kayit_tarihi": 1704844800,
+      "son_guncelleme": 1704844800
     }
   ],
   "sistem_ayarlari": {

@@ -88,6 +88,9 @@
             }
         });
     </script>
+
+    <!-- Tarih işlemleri için JavaScript -->
+    <script src="js/date_functions.js"></script>
 </head>
 
 <body>
@@ -358,6 +361,38 @@
                 });
             });
         });
+    </script>
+
+    <script>
+    // Tarih formatlarının kullanım örnekleri
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tarihleri timestamp'den Türkçe formata çevirme
+        const tarihElementleri = document.querySelectorAll('[data-timestamp]');
+        tarihElementleri.forEach(element => {
+            const timestamp = element.getAttribute('data-timestamp');
+            const format = element.getAttribute('data-format') || 'kisa';
+            element.textContent = tarihFormatla(timestamp, format);
+        });
+
+        // Form inputlarını düzenleme
+        const tarihInputlari = document.querySelectorAll('input[type="date"]');
+        tarihInputlari.forEach(input => {
+            // Varsayılan değeri varsa
+            if (input.getAttribute('data-timestamp')) {
+                const timestamp = input.getAttribute('data-timestamp');
+                input.value = timestampToInputValue(timestamp);
+            }
+
+            // Form gönderilirken
+            input.closest('form')?.addEventListener('submit', function(e) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name + '_timestamp';
+                hiddenInput.value = inputValueToTimestamp(input.value);
+                this.appendChild(hiddenInput);
+            });
+        });
+    });
     </script>
 </body>
 
