@@ -830,36 +830,60 @@ function vardiyaSaatleriHesapla($vardiyaTuru)
 {
     $vardiyaTurleri = vardiyaTurleriniGetir();
     if (!isset($vardiyaTurleri[$vardiyaTuru])) {
-        throw new Exception('Geçersiz vardiya türü');
+        throw new Exception('Geçersiz vardiya türü: ' . $vardiyaTuru);
     }
 
     $vardiya = $vardiyaTurleri[$vardiyaTuru];
 
     // Saat formatı kontrolü
-    if (
-        !isset($vardiya['baslangic']) || !isset($vardiya['bitis']) ||
-        !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic']) ||
-        !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['bitis'])
-    ) {
-        throw new Exception('Geçersiz vardiya saat formatı');
+    if (!isset($vardiya['baslangic']) || !isset($vardiya['bitis'])) {
+        throw new Exception('Vardiya başlangıç veya bitiş saati tanımlanmamış.');
     }
 
-    // Saatleri timestamp'e çevir
-    $baslangicSaat = strtotime('1970-01-01 ' . $vardiya['baslangic']);
-    $bitisSaat = strtotime('1970-01-01 ' . $vardiya['bitis']);
-
-    // Gece vardiyası kontrolü (bitiş < başlangıç)
-    if ($bitisSaat < $baslangicSaat) {
-        $bitisSaat = strtotime('1970-01-02 ' . $vardiya['bitis']); // Bir sonraki güne geç
+    if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic'])) {
+        throw new Exception('Geçersiz başlangıç saati formatı: ' . $vardiya['baslangic']);
     }
 
-    $calismaSuresi = ($bitisSaat - $baslangicSaat) / 3600; // Saat cinsinden süre
+    if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['bitis'])) {
+        throw new Exception('Geçersiz bitiş saati formatı: ' . $vardiya['bitis']);
+    }
+
+    // Saatleri dakikaya çevir
+    list($baslangicSaat, $baslangicDakika) = array_map('intval', explode(':', $vardiya['baslangic']));
+    list($bitisSaat, $bitisDakika) = array_map('intval', explode(':', $vardiya['bitis']));
+
+    $baslangicDakikaTotal = $baslangicSaat * 60 + $baslangicDakika;
+    $bitisDakikaTotal = $bitisSaat * 60 + $bitisDakika;
+
+    // Gece vardiyası kontrolü
+    $geceVardiyasi = false;
+    if ($bitisDakikaTotal <= $baslangicDakikaTotal) {
+        $bitisDakikaTotal += 24 * 60; // 24 saat ekle
+        $geceVardiyasi = true;
+    }
+
+    // Toplam çalışma süresini hesapla (saat cinsinden)
+    $calismaSuresi = ($bitisDakikaTotal - $baslangicDakikaTotal) / 60;
+
+    // Mola süresini hesapla ve düş
+    $molaSuresi = $calismaSuresi >= 7.5 ? 0.5 : ($calismaSuresi >= 4 ? 0.25 : 0);
+    $netCalismaSuresi = $calismaSuresi - $molaSuresi;
 
     return [
         'baslangic' => $vardiya['baslangic'],
         'bitis' => $vardiya['bitis'],
-        'sure' => $calismaSuresi,
-        'gece_vardiyasi' => ($bitisSaat < $baslangicSaat)
+        'sure' => $netCalismaSuresi,
+        'brut_sure' => $calismaSuresi,
+        'mola_suresi' => $molaSuresi,
+        'gece_vardiyasi' => $geceVardiyasi,
+        'baslangic_dakika' => $baslangicDakikaTotal,
+        'bitis_dakika' => $bitisDakikaTotal,
+        'vardiya_bilgisi' => [
+            'etiket' => $vardiya['etiket'],
+            'renk' => $vardiya['renk'],
+            'min_personel' => $vardiya['min_personel'],
+            'max_personel' => $vardiya['max_personel']
+        ]
     ];
 }
 
@@ -1813,7 +1837,15 @@ function vardiyaTurleriniGetir()
                 'bitis' => '16:00',
                 'etiket' => 'Sabah',
                 'renk' => '#4CAF50',
-                'sure' => 8
+                'sure' => 8,
+                'gece_vardiyasi' => false,
+                'min_personel' => 2,
+                'max_personel' => 5,
+                'ozel_gunler' => [
+                    'hafta_sonu_aktif' => true,
+                    'resmi_tatil_aktif' => true
+                ],
+                'yetkinlikler' => []
             ],
             'aksam' => [
                 'id' => 'aksam',
@@ -1821,7 +1853,15 @@ function vardiyaTurleriniGetir()
                 'bitis' => '24:00',
                 'etiket' => 'Akşam',
                 'renk' => '#2196F3',
-                'sure' => 8
+                'sure' => 8,
+                'gece_vardiyasi' => false,
+                'min_personel' => 2,
+                'max_personel' => 4,
+                'ozel_gunler' => [
+                    'hafta_sonu_aktif' => true,
+                    'resmi_tatil_aktif' => true
+                ],
+                'yetkinlikler' => []
             ],
             'gece' => [
                 'id' => 'gece',
@@ -1829,19 +1869,59 @@ function vardiyaTurleriniGetir()
                 'bitis' => '08:00',
                 'etiket' => 'Gece',
                 'renk' => '#9C27B0',
-                'sure' => 8
+                'sure' => 8,
+                'gece_vardiyasi' => true,
+                'min_personel' => 1,
+                'max_personel' => 3,
+                'ozel_gunler' => [
+                    'hafta_sonu_aktif' => true,
+                    'resmi_tatil_aktif' => true
+                ],
+                'yetkinlikler' => []
             ]
         ];
     }
 
     $vardiyalar = [];
     foreach ($data['sistem_ayarlari']['vardiya_turleri'] as $vardiya) {
-        // Eksik alanları varsayılan değerlerle doldur
-        $vardiyalar[$vardiya['id']] = array_merge([
+        // Varsayılan değerler
+        $varsayilanDegerler = [
             'etiket' => ucfirst($vardiya['id']),
             'renk' => '#808080',
-            'sure' => 8
-        ], $vardiya);
+            'sure' => 8,
+            'gece_vardiyasi' => false,
+            'min_personel' => 1,
+            'max_personel' => 5,
+            'ozel_gunler' => [
+                'hafta_sonu_aktif' => true,
+                'resmi_tatil_aktif' => true
+            ],
+            'yetkinlikler' => []
+        ];
+
+        // Saat formatı kontrolü
+        if (isset($vardiya['baslangic']) && !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic'])) {
+            throw new Exception('Geçersiz başlangıç saati formatı: ' . $vardiya['baslangic']);
+        }
+        if (isset($vardiya['bitis']) && !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['bitis'])) {
+            throw new Exception('Geçersiz bitiş saati formatı: ' . $vardiya['bitis']);
+        }
+
+        // Gece vardiyası kontrolü
+        if (isset($vardiya['baslangic']) && isset($vardiya['bitis'])) {
+            $baslangicSaat = strtotime('1970-01-01 ' . $vardiya['baslangic']);
+            $bitisSaat = strtotime('1970-01-01 ' . $vardiya['bitis']);
+            $varsayilanDegerler['gece_vardiyasi'] = ($bitisSaat < $baslangicSaat);
+        }
+
+        // Personel sayısı kontrolü
+        if (isset($vardiya['min_personel']) && isset($vardiya['max_personel'])) {
+            if ($vardiya['min_personel'] > $vardiya['max_personel']) {
+                throw new Exception('Minimum personel sayısı, maksimum personel sayısından büyük olamaz.');
+            }
+        }
+
+        $vardiyalar[$vardiya['id']] = array_merge($varsayilanDegerler, $vardiya);
     }
 
     return $vardiyalar;
@@ -1850,9 +1930,123 @@ function vardiyaTurleriniGetir()
 // Vardiya türü etiketini getir
 function vardiyaTuruEtiketGetir($vardiyaTuru)
 {
-    $vardiyaTurleri = vardiyaTurleriniGetir();
-    if (!isset($vardiyaTurleri[$vardiyaTuru])) {
+    try {
+        $vardiyaTurleri = vardiyaTurleriniGetir();
+        if (!isset($vardiyaTurleri[$vardiyaTuru])) {
+            throw new Exception('Geçersiz vardiya türü: ' . $vardiyaTuru);
+        }
+        return $vardiyaTurleri[$vardiyaTuru]['etiket'] ?? ucfirst($vardiyaTuru);
+    } catch (Exception $e) {
+        islemLogKaydet('hata', 'Vardiya türü etiketi alınamadı: ' . $e->getMessage());
         return '?';
     }
-    return $vardiyaTurleri[$vardiyaTuru]['etiket'] ?? ucfirst($vardiyaTuru);
+}
+
+// Vardiya detaylarını getir
+function vardiyaDetaylariGetir($vardiyaTuru)
+{
+    try {
+        $vardiyaTurleri = vardiyaTurleriniGetir();
+        if (!isset($vardiyaTurleri[$vardiyaTuru])) {
+            throw new Exception('Geçersiz vardiya türü: ' . $vardiyaTuru);
+        }
+
+        $vardiya = $vardiyaTurleri[$vardiyaTuru];
+        $saatler = vardiyaSaatleriHesapla($vardiyaTuru);
+
+        return [
+            'id' => $vardiya['id'],
+            'etiket' => $vardiya['etiket'],
+            'baslangic' => $vardiya['baslangic'],
+            'bitis' => $vardiya['bitis'],
+            'sure' => $saatler['sure'],
+            'gece_vardiyasi' => $vardiya['gece_vardiyasi'],
+            'renk' => $vardiya['renk'],
+            'min_personel' => $vardiya['min_personel'],
+            'max_personel' => $vardiya['max_personel'],
+            'ozel_gunler' => $vardiya['ozel_gunler'],
+            'yetkinlikler' => $vardiya['yetkinlikler']
+        ];
+    } catch (Exception $e) {
+        islemLogKaydet('hata', 'Vardiya detayları alınamadı: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+// Vardiya çakışması detaylı kontrolü
+function vardiyaCakismasiDetayliKontrol($personelId, $baslangicZamani, $bitisZamani, $haricVardiyaId = null)
+{
+    $data = veriOku();
+    $cakismalar = [];
+
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['personel_id'] === $personelId && $vardiya['id'] !== $haricVardiyaId) {
+            try {
+                $vardiyaSaatleri = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
+                $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
+                
+                // Vardiya başlangıç ve bitiş zamanlarını hesapla
+                $vardiyaBaslangic = strtotime(date('Y-m-d ', $vardiyaTarihi) . $vardiyaSaatleri['baslangic']);
+                $vardiyaBitis = $vardiyaSaatleri['gece_vardiyasi'] 
+                    ? strtotime(date('Y-m-d ', $vardiyaTarihi) . $vardiyaSaatleri['bitis']) + 86400
+                    : strtotime(date('Y-m-d ', $vardiyaTarihi) . $vardiyaSaatleri['bitis']);
+
+                // Çakışma kontrolü
+                if (
+                    ($baslangicZamani >= $vardiyaBaslangic && $baslangicZamani < $vardiyaBitis) ||
+                    ($bitisZamani > $vardiyaBaslangic && $bitisZamani <= $vardiyaBitis) ||
+                    ($baslangicZamani <= $vardiyaBaslangic && $bitisZamani >= $vardiyaBitis)
+                ) {
+                    $cakismalar[] = [
+                        'vardiya_id' => $vardiya['id'],
+                        'vardiya_turu' => $vardiya['vardiya_turu'],
+                        'tarih' => date('Y-m-d', $vardiyaTarihi),
+                        'baslangic' => date('H:i', $vardiyaBaslangic),
+                        'bitis' => date('H:i', $vardiyaBitis),
+                        'sure' => $vardiyaSaatleri['sure']
+                    ];
+                }
+            } catch (Exception $e) {
+                // Vardiya saatleri hesaplanamadıysa bu vardiyayı atla
+                continue;
+            }
+        }
+    }
+
+    return $cakismalar;
+}
+
+// Vardiya süresi kontrolü
+function vardiyaSuresiKontrol($vardiyaTuru, $personelId, $tarih)
+{
+    try {
+        $vardiyaSaatleri = vardiyaSaatleriHesapla($vardiyaTuru);
+        $gunlukCalismaSuresi = $vardiyaSaatleri['sure'];
+        
+        // Aynı gün içindeki diğer vardiyaları kontrol et
+        $data = veriOku();
+        $gunBaslangic = strtotime(date('Y-m-d 00:00:00', $tarih));
+        $gunBitis = strtotime(date('Y-m-d 23:59:59', $tarih));
+        
+        foreach ($data['vardiyalar'] as $vardiya) {
+            if ($vardiya['personel_id'] === $personelId) {
+                $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
+                
+                if ($vardiyaTarihi >= $gunBaslangic && $vardiyaTarihi <= $gunBitis) {
+                    $mevcutVardiyaSaatleri = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
+                    $gunlukCalismaSuresi += $mevcutVardiyaSaatleri['sure'];
+                }
+            }
+        }
+        
+        return [
+            'toplam_sure' => $gunlukCalismaSuresi,
+            'izin_verilen_sure' => 11, // Günlük maksimum çalışma süresi
+            'uygun' => $gunlukCalismaSuresi <= 11,
+            'kalan_sure' => max(0, 11 - $gunlukCalismaSuresi)
+        ];
+    } catch (Exception $e) {
+        islemLogKaydet('hata', 'Vardiya süresi kontrolü yapılamadı: ' . $e->getMessage());
+        throw $e;
+    }
 }
