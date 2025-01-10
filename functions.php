@@ -96,7 +96,7 @@ function vardiyaCakismasiVarMi($personelId, $tarih, $vardiyaTuru, $haricVardiyaI
 function vardiyaDegisimTalebiOlustur($vardiyaId, $talepEdenPersonelId, $aciklama)
 {
     $data = veriOku();
-    
+
     // Vardiya kontrolü
     $vardiya = null;
     foreach ($data['vardiyalar'] as $v) {
@@ -105,11 +105,11 @@ function vardiyaDegisimTalebiOlustur($vardiyaId, $talepEdenPersonelId, $aciklama
             break;
         }
     }
-    
+
     if (!$vardiya) {
         throw new Exception('Vardiya bulunamadı.');
     }
-    
+
     // Kendi vardiyası için talep oluşturamaz
     if ($vardiya['personel_id'] === $talepEdenPersonelId) {
         throw new Exception('Kendi vardiyanız için değişim talebi oluşturamazsınız.');
@@ -131,7 +131,7 @@ function vardiyaDegisimTalebiOlustur($vardiyaId, $talepEdenPersonelId, $aciklama
 
     $data['vardiya_talepleri'][] = $yeniTalep;
     veriYaz($data);
-    
+
     islemLogKaydet('vardiya_talep', "Vardiya değişim talebi oluşturuldu: Vardiya ID: $vardiyaId");
     return $yeniTalep['id'];
 }
@@ -141,7 +141,7 @@ function vardiyaTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
 {
     $data = veriOku();
     $talep = null;
-    
+
     foreach ($data['vardiya_talepleri'] as &$talep) {
         if ($talep['id'] === $talepId) {
             $talep['durum'] = $durum;
@@ -153,7 +153,7 @@ function vardiyaTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
                 if (!isset($data['izinler'])) {
                     $data['izinler'] = [];
                 }
-                
+
                 $yeniIzin = [
                     'id' => uniqid(),
                     'personel_id' => $talep['personel_id'],
@@ -169,17 +169,17 @@ function vardiyaTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
                     'belgeler' => $talep['belgeler'] ?? [],
                     'notlar' => $yoneticiNotu
                 ];
-                
+
                 $data['izinler'][] = $yeniIzin;
             }
             break;
         }
     }
-    
+
     if ($talep === null) {
         throw new Exception('İzin talebi bulunamadı.');
     }
-    
+
     veriYaz($data);
     islemLogKaydet('izin_talebi_guncelle', "İzin talebi güncellendi: $talepId - Durum: $durum");
     return true;
@@ -280,12 +280,12 @@ function personelSil($personelId)
 function ardisikCalismaGunleriniKontrolEt($personelId, $tarih)
 {
     $data = veriOku();
-    
+
     // Tarihi timestamp'e çevir
     if (!is_numeric($tarih)) {
         $tarih = strtotime($tarih);
     }
-    
+
     $ardisikGunler = 0;
 
     // Seçilen tarihten geriye doğru 6 günü kontrol et
@@ -333,14 +333,14 @@ function ardisikCalismaGunleriniKontrolEt($personelId, $tarih)
 function personelEkle($ad, $soyad, $email, $telefon = '', $yetki = 'personel')
 {
     $data = veriOku();
-    
+
     // E-posta kontrolü
     foreach ($data['personel'] as $personel) {
         if ($personel['email'] === $email) {
             throw new Exception('Bu e-posta adresi zaten kullanılıyor.');
         }
     }
-    
+
     $yeniPersonel = [
         'id' => uniqid(),
         'ad' => $ad,
@@ -371,10 +371,10 @@ function personelEkle($ad, $soyad, $email, $telefon = '', $yetki = 'personel')
             ]
         ]
     ];
-    
+
     $data['personel'][] = $yeniPersonel;
     veriYaz($data);
-    
+
     islemLogKaydet('personel_ekle', "Yeni personel eklendi: $ad $soyad ($email)");
     return $yeniPersonel['id'];
 }
@@ -551,7 +551,7 @@ function izinTalebiOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTur
 
     $data = veriOku();
     $gunSayisi = floor(($bitisTimestamp - $baslangicTimestamp) / (60 * 60 * 24)) + 1;
-    
+
     // Personel kontrolü ve izin hakkı kontrolü
     $personel = null;
     foreach ($data['personel'] as $p) {
@@ -586,8 +586,10 @@ function izinTalebiOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTur
         $kontrolTarihi = strtotime("+$i day", $baslangicTimestamp);
         foreach ($data['vardiyalar'] as $vardiya) {
             $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            if ($vardiya['personel_id'] === $personelId && 
-                date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $kontrolTarihi)) {
+            if (
+                $vardiya['personel_id'] === $personelId &&
+                date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $kontrolTarihi)
+            ) {
                 throw new Exception('Seçilen tarih aralığında vardiya bulunuyor. Önce vardiyaları düzenlemelisiniz.');
             }
         }
@@ -600,7 +602,8 @@ function izinTalebiOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTur
             $izinBitis = is_numeric($izin['bitis_tarihi']) ? $izin['bitis_tarihi'] : strtotime($izin['bitis_tarihi']);
 
             if (($baslangicTimestamp >= $izinBaslangic && $baslangicTimestamp <= $izinBitis) ||
-                ($bitisTimestamp >= $izinBaslangic && $bitisTimestamp <= $izinBitis)) {
+                ($bitisTimestamp >= $izinBaslangic && $bitisTimestamp <= $izinBitis)
+            ) {
                 throw new Exception('Seçilen tarih aralığında başka bir izin bulunuyor.');
             }
         }
@@ -627,7 +630,7 @@ function izinTalebiOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTur
 
     $data['izin_talepleri'][] = $yeniTalep;
     veriYaz($data);
-    
+
     islemLogKaydet('izin_talebi_olustur', "İzin talebi oluşturuldu: $personelId - $izinTuru ($gunSayisi gün)");
     return $yeniTalep['id'];
 }
@@ -637,7 +640,7 @@ function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
 {
     $data = veriOku();
     $talep = null;
-    
+
     foreach ($data['izin_talepleri'] as &$talep) {
         if ($talep['id'] === $talepId) {
             // Eğer talep zaten onaylanmış veya reddedilmişse işlem yapma
@@ -654,7 +657,7 @@ function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
                 if (!isset($data['izinler'])) {
                     $data['izinler'] = [];
                 }
-                
+
                 $yeniIzin = [
                     'id' => uniqid(),
                     'personel_id' => $talep['personel_id'],
@@ -670,7 +673,7 @@ function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
                     'belgeler' => $talep['belgeler'] ?? [],
                     'notlar' => $yoneticiNotu
                 ];
-                
+
                 $data['izinler'][] = $yeniIzin;
 
                 // İzin haklarını güncelle
@@ -686,8 +689,8 @@ function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
                                 ];
                             }
                             $personel['izin_haklari']['yillik']['kullanilan'] += $talep['gun_sayisi'];
-                            $personel['izin_haklari']['yillik']['kalan'] = 
-                                $personel['izin_haklari']['yillik']['toplam'] - 
+                            $personel['izin_haklari']['yillik']['kalan'] =
+                                $personel['izin_haklari']['yillik']['toplam'] -
                                 $personel['izin_haklari']['yillik']['kullanilan'];
                         } elseif ($talep['izin_turu'] === 'mazeret') {
                             if (!isset($personel['izin_haklari']['mazeret'])) {
@@ -698,8 +701,8 @@ function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
                                 ];
                             }
                             $personel['izin_haklari']['mazeret']['kullanilan'] += $talep['gun_sayisi'];
-                            $personel['izin_haklari']['mazeret']['kalan'] = 
-                                $personel['izin_haklari']['mazeret']['toplam'] - 
+                            $personel['izin_haklari']['mazeret']['kalan'] =
+                                $personel['izin_haklari']['mazeret']['toplam'] -
                                 $personel['izin_haklari']['mazeret']['kullanilan'];
                         } elseif ($talep['izin_turu'] === 'hastalik') {
                             if (!isset($personel['izin_haklari']['hastalik'])) {
@@ -714,11 +717,11 @@ function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
             break;
         }
     }
-    
+
     if ($talep === null) {
         throw new Exception('İzin talebi bulunamadı.');
     }
-    
+
     veriYaz($data);
     islemLogKaydet('izin_talebi_guncelle', "İzin talebi güncellendi: $talepId - Durum: $durum");
     return true;
@@ -759,7 +762,7 @@ function yillikIzinHakkiHesapla($personelId)
 {
     $data = veriOku();
     $personel = null;
-    
+
     // Önce personeli bul ve izin haklarını kontrol et
     foreach ($data['personel'] as $p) {
         if ($p['id'] === $personelId) {
@@ -767,11 +770,11 @@ function yillikIzinHakkiHesapla($personelId)
             break;
         }
     }
-    
+
     if (!$personel || !isset($personel['izin_haklari']['yillik'])) {
         return 14; // Varsayılan yıllık izin hakkı
     }
-    
+
     $izinHakki = $personel['izin_haklari']['yillik'];
     $kullanilanIzin = 0;
 
@@ -786,9 +789,11 @@ function yillikIzinHakkiHesapla($personelId)
 
     // Bekleyen izin taleplerini hesapla
     foreach ($data['izin_talepleri'] as $talep) {
-        if ($talep['personel_id'] === $personelId && 
-            $talep['izin_turu'] === 'yillik' && 
-            $talep['durum'] === 'beklemede') {
+        if (
+            $talep['personel_id'] === $personelId &&
+            $talep['izin_turu'] === 'yillik' &&
+            $talep['durum'] === 'beklemede'
+        ) {
             $baslangicTimestamp = is_numeric($talep['baslangic_tarihi']) ? $talep['baslangic_tarihi'] : strtotime($talep['baslangic_tarihi']);
             $bitisTimestamp = is_numeric($talep['bitis_tarihi']) ? $talep['bitis_tarihi'] : strtotime($talep['bitis_tarihi']);
             $kullanilanIzin += floor(($bitisTimestamp - $baslangicTimestamp) / (60 * 60 * 24)) + 1;
@@ -802,7 +807,7 @@ function yillikIzinHakkiHesapla($personelId)
 function izinTurleriniGetir()
 {
     $data = veriOku();
-    
+
     if (!isset($data['sistem_ayarlari']['izin_turleri'])) {
         // Varsayılan izin türleri
         return [
@@ -816,7 +821,7 @@ function izinTurleriniGetir()
     foreach ($data['sistem_ayarlari']['izin_turleri'] as $kod => $izinTuru) {
         $izinTurleri[$kod] = $izinTuru['ad'];
     }
-    
+
     return $izinTurleri;
 }
 
@@ -829,20 +834,32 @@ function vardiyaSaatleriHesapla($vardiyaTuru)
     }
 
     $vardiya = $vardiyaTurleri[$vardiyaTuru];
-    $baslangicSaat = strtotime($vardiya['baslangic']);
-    $bitisSaat = strtotime($vardiya['bitis']);
-    
-    // Eğer bitiş saati başlangıç saatinden küçükse (gece vardiyası), 24 saat ekle
-    if ($bitisSaat < $baslangicSaat) {
-        $bitisSaat += 86400; // 24 saat
+
+    // Saat formatı kontrolü
+    if (
+        !isset($vardiya['baslangic']) || !isset($vardiya['bitis']) ||
+        !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic']) ||
+        !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['bitis'])
+    ) {
+        throw new Exception('Geçersiz vardiya saat formatı');
     }
-    
+
+    // Saatleri timestamp'e çevir
+    $baslangicSaat = strtotime('1970-01-01 ' . $vardiya['baslangic']);
+    $bitisSaat = strtotime('1970-01-01 ' . $vardiya['bitis']);
+
+    // Gece vardiyası kontrolü (bitiş < başlangıç)
+    if ($bitisSaat < $baslangicSaat) {
+        $bitisSaat = strtotime('1970-01-02 ' . $vardiya['bitis']); // Bir sonraki güne geç
+    }
+
     $calismaSuresi = ($bitisSaat - $baslangicSaat) / 3600; // Saat cinsinden süre
 
     return [
         'baslangic' => $vardiya['baslangic'],
         'bitis' => $vardiya['bitis'],
-        'sure' => $calismaSuresi
+        'sure' => $calismaSuresi,
+        'gece_vardiyasi' => ($bitisSaat < $baslangicSaat)
     ];
 }
 
@@ -871,7 +888,7 @@ function aylikCalismaRaporu($ay, $yil)
 
     foreach ($data['vardiyalar'] as $vardiya) {
         $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-        
+
         if ($vardiyaTarihi >= $baslangicTimestamp && $vardiyaTarihi <= $bitisTimestamp) {
             $saatler = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
             $rapor[$vardiya['personel_id']]['toplam_saat'] += $saatler['sure'];
@@ -891,7 +908,7 @@ function vardiyaTuruDagilimi($baslangicTarih, $bitisTarih)
 
     $data = veriOku();
     $vardiyaTurleri = vardiyaTurleriniGetir();
-    
+
     $dagilim = [];
     foreach ($vardiyaTurleri as $id => $vardiya) {
         $dagilim[$id] = [
@@ -966,7 +983,7 @@ function excelRaporuOlustur($ay, $yil)
     // Veri satırları
     foreach ($rapor as $personelRapor) {
         $satir = [
-            str_putcsv($personelRapor['personel']), 
+            str_putcsv($personelRapor['personel']),
             number_format($personelRapor['toplam_saat'], 2)
         ];
         foreach ($vardiyaTurleri as $id => $vardiya) {
@@ -979,7 +996,8 @@ function excelRaporuOlustur($ay, $yil)
 }
 
 // CSV için özel karakter düzenleme
-function str_putcsv($str) {
+function str_putcsv($str)
+{
     $str = str_replace('"', '""', $str);
     if (strpbrk($str, ",\"\r\n") !== false) {
         $str = '"' . $str . '"';
@@ -996,12 +1014,13 @@ function pdfRaporuIcinHtmlOlustur($ay, $yil)
 
     $html = '<h1>Aylık Çalışma Raporu - ' . $ayAdi . '</h1>';
     $html .= '<table border="1" cellpadding="5" cellspacing="0" width="100%">';
-    
+
     // Başlık satırı
     $html .= '<tr><th>Personel</th><th>Toplam Saat</th>';
     foreach ($vardiyaTurleri as $vardiya) {
-        $html .= sprintf('<th style="background-color: %s">%s</th>', 
-            $vardiya['renk'], 
+        $html .= sprintf(
+            '<th style="background-color: %s">%s</th>',
+            $vardiya['renk'],
             htmlspecialchars($vardiya['etiket']) . ' Vardiyası'
         );
     }
@@ -1012,14 +1031,15 @@ function pdfRaporuIcinHtmlOlustur($ay, $yil)
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($personelRapor['personel']) . '</td>';
         $html .= '<td>' . number_format($personelRapor['toplam_saat'], 2) . ' Saat</td>';
-        
+
         foreach ($vardiyaTurleri as $id => $vardiya) {
-            $html .= sprintf('<td style="text-align: center; background-color: %s">%d</td>', 
-                adjustBrightness($vardiya['renk'], 0.9), 
+            $html .= sprintf(
+                '<td style="text-align: center; background-color: %s">%d</td>',
+                adjustBrightness($vardiya['renk'], 0.9),
                 $personelRapor['vardiyalar'][$id]
             );
         }
-        
+
         $html .= '</tr>';
     }
 
@@ -1028,21 +1048,22 @@ function pdfRaporuIcinHtmlOlustur($ay, $yil)
 }
 
 // Renk parlaklığını ayarla
-function adjustBrightness($hex, $factor) {
+function adjustBrightness($hex, $factor)
+{
     $hex = ltrim($hex, '#');
-    
-    if(strlen($hex) == 3) {
+
+    if (strlen($hex) == 3) {
         $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
     }
-    
+
     $r = hexdec(substr($hex, 0, 2)) * $factor;
     $g = hexdec(substr($hex, 2, 2)) * $factor;
     $b = hexdec(substr($hex, 4, 2)) * $factor;
-    
+
     $r = min(255, max(0, $r));
     $g = min(255, max(0, $g));
     $b = min(255, max(0, $b));
-    
+
     return sprintf("#%02x%02x%02x", $r, $g, $b);
 }
 
@@ -1103,38 +1124,136 @@ function personelTercihGetir($personelId)
 function personelAylikVardiyaSayisi($personelId, $ay, $yil)
 {
     $data = veriOku();
+
+    // Personel kontrolü
+    $personelBulundu = false;
+    $personelBilgisi = null;
+    foreach ($data['personel'] as $personel) {
+        if ($personel['id'] === $personelId) {
+            $personelBulundu = true;
+            $personelBilgisi = $personel;
+            break;
+        }
+    }
+
+    if (!$personelBulundu) {
+        throw new Exception('Personel bulunamadı.');
+    }
+
+    // Ay ve yıl kontrolü
+    if (!is_numeric($ay) || $ay < 1 || $ay > 12) {
+        throw new Exception('Geçersiz ay değeri.');
+    }
+
+    if (!is_numeric($yil) || $yil < 2000 || $yil > 2100) {
+        throw new Exception('Geçersiz yıl değeri.');
+    }
+
     $vardiyaTurleri = vardiyaTurleriniGetir();
-    
+
     // Ay başlangıç ve bitiş tarihlerini timestamp olarak al
     $baslangicTimestamp = mktime(0, 0, 0, $ay, 1, $yil);
     $bitisTimestamp = mktime(23, 59, 59, $ay + 1, 0, $yil);
 
-    $vardiyaSayilari = ['toplam' => 0];
+    $vardiyaSayilari = [
+        'toplam' => 0,
+        'toplam_saat' => 0,
+        'toplam_gece_vardiyasi' => 0,
+        'toplam_hafta_sonu' => 0,
+        'vardiyalar' => [],
+        'personel_bilgisi' => [
+            'ad_soyad' => $personelBilgisi['ad'] . ' ' . $personelBilgisi['soyad'],
+            'email' => $personelBilgisi['email']
+        ],
+        'donem' => [
+            'ay' => $ay,
+            'yil' => $yil,
+            'baslangic' => date('Y-m-d', $baslangicTimestamp),
+            'bitis' => date('Y-m-d', $bitisTimestamp)
+        ]
+    ];
+
     foreach ($vardiyaTurleri as $id => $vardiya) {
-        $vardiyaSayilari[$id] = [
+        $vardiyaSayilari['vardiyalar'][$id] = [
             'adet' => 0,
             'saat' => 0,
-            'etiket' => $vardiya['etiket']
+            'etiket' => $vardiya['etiket'] ?? $id,
+            'toplam_sure' => 0,
+            'hafta_ici_adet' => 0,
+            'hafta_sonu_adet' => 0
         ];
     }
+
+    // İzinli günleri kontrol et
+    $izinliGunler = [];
+    if (isset($data['izinler'])) {
+        foreach ($data['izinler'] as $izin) {
+            if ($izin['personel_id'] === $personelId) {
+                $izinBaslangic = is_numeric($izin['baslangic_tarihi']) ? $izin['baslangic_tarihi'] : strtotime($izin['baslangic_tarihi']);
+                $izinBitis = is_numeric($izin['bitis_tarihi']) ? $izin['bitis_tarihi'] : strtotime($izin['bitis_tarihi']);
+                
+                if ($izinBaslangic <= $bitisTimestamp && $izinBitis >= $baslangicTimestamp) {
+                    for ($t = max($izinBaslangic, $baslangicTimestamp); $t <= min($izinBitis, $bitisTimestamp); $t = strtotime('+1 day', $t)) {
+                        $izinliGunler[date('Y-m-d', $t)] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    $vardiyaSayilari['izinli_gun_sayisi'] = count($izinliGunler);
 
     foreach ($data['vardiyalar'] as $vardiya) {
         if ($vardiya['personel_id'] === $personelId) {
             $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            
+
             if ($vardiyaTarihi >= $baslangicTimestamp && $vardiyaTarihi <= $bitisTimestamp) {
-                $vardiyaSayilari[$vardiya['vardiya_turu']]['adet']++;
-                
-                // Vardiya süresini hesapla
-                $vardiyaBilgisi = $vardiyaTurleri[$vardiya['vardiya_turu']] ?? null;
-                if ($vardiyaBilgisi) {
-                    $vardiyaSayilari[$vardiya['vardiya_turu']]['saat'] += $vardiyaBilgisi['sure'];
+                // Vardiya türü kontrolü
+                if (!isset($vardiyaTurleri[$vardiya['vardiya_turu']])) {
+                    continue; // Geçersiz vardiya türünü atla
                 }
-                
+
+                $vardiyaGunu = date('Y-m-d', $vardiyaTarihi);
+                $haftaSonu = (date('N', $vardiyaTarihi) >= 6); // 6=Cumartesi, 7=Pazar
+
+                if ($haftaSonu) {
+                    $vardiyaSayilari['toplam_hafta_sonu']++;
+                    $vardiyaSayilari['vardiyalar'][$vardiya['vardiya_turu']]['hafta_sonu_adet']++;
+                } else {
+                    $vardiyaSayilari['vardiyalar'][$vardiya['vardiya_turu']]['hafta_ici_adet']++;
+                }
+
+                $vardiyaSayilari['vardiyalar'][$vardiya['vardiya_turu']]['adet']++;
+
+                // Vardiya süresini hesapla
+                try {
+                    $vardiyaSaatleri = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
+                    $vardiyaSayilari['vardiyalar'][$vardiya['vardiya_turu']]['saat'] += $vardiyaSaatleri['sure'];
+                    $vardiyaSayilari['toplam_saat'] += $vardiyaSaatleri['sure'];
+                    
+                    if ($vardiyaSaatleri['gece_vardiyasi']) {
+                        $vardiyaSayilari['toplam_gece_vardiyasi']++;
+                    }
+                } catch (Exception $e) {
+                    // Vardiya süresi hesaplanamadıysa atla
+                    continue;
+                }
+
                 $vardiyaSayilari['toplam']++;
             }
         }
     }
+
+    // Ek istatistikler
+    $vardiyaSayilari['ortalama_gunluk_saat'] = $vardiyaSayilari['toplam'] > 0 
+        ? round($vardiyaSayilari['toplam_saat'] / $vardiyaSayilari['toplam'], 2) 
+        : 0;
+
+    $vardiyaSayilari['calisilan_gun_sayisi'] = $vardiyaSayilari['toplam'];
+    $vardiyaSayilari['izinli_gun_sayisi'] = count($izinliGunler);
+
+    $aydakiGunSayisi = date('t', $baslangicTimestamp);
+    $vardiyaSayilari['bos_gun_sayisi'] = $aydakiGunSayisi - $vardiyaSayilari['calisilan_gun_sayisi'] - $vardiyaSayilari['izinli_gun_sayisi'];
 
     return $vardiyaSayilari;
 }
@@ -1175,9 +1294,11 @@ function akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru)
         $sonYediGunVardiyaSayisi = 0;
         foreach ($data['vardiyalar'] as $vardiya) {
             $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            if ($vardiya['personel_id'] === $personel['id'] && 
-                $vardiyaTarihi >= strtotime('-7 days', $tarih) && 
-                $vardiyaTarihi < $tarih) {
+            if (
+                $vardiya['personel_id'] === $personel['id'] &&
+                $vardiyaTarihi >= strtotime('-7 days', $tarih) &&
+                $vardiyaTarihi < $tarih
+            ) {
                 $sonYediGunVardiyaSayisi++;
             }
         }
@@ -1207,8 +1328,8 @@ function akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru)
 
         // Aylık vardiya dağılımı kontrolü
         $aylikVardiyalar = personelAylikVardiyaSayisi(
-            $personel['id'], 
-            date('m', $tarih), 
+            $personel['id'],
+            date('m', $tarih),
             date('Y', $tarih)
         );
         if ($aylikVardiyalar['toplam'] > 20) { // Aylık maksimum vardiya sayısı
@@ -1222,7 +1343,7 @@ function akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru)
     }
 
     // Puanlara göre sırala
-    uasort($puanlar, function($a, $b) {
+    uasort($puanlar, function ($a, $b) {
         return $b['puan'] - $a['puan'];
     });
 
@@ -1261,7 +1382,7 @@ function kullaniciGiris($email, $sifre)
 
                     // Yeni session başlat
                     session_start();
-                    
+
                     // Session'a kullanıcı bilgilerini kaydet
                     $_SESSION['kullanici_id'] = $personel['id'];
                     $_SESSION['email'] = $personel['email'];
@@ -1379,15 +1500,15 @@ function kullaniciGuncelle($kullaniciId, $ad, $soyad, $email, $rol = null, $tele
             $kullanici['ad'] = $ad;
             $kullanici['soyad'] = $soyad;
             $kullanici['email'] = $email;
-            
+
             if ($rol !== null) {
                 $kullanici['yetki'] = $rol;
             }
-            
+
             if ($telefon !== null) {
                 $kullanici['telefon'] = $telefon;
             }
-            
+
             if ($tercihler !== null) {
                 $kullanici['tercihler'] = array_merge($kullanici['tercihler'] ?? [], $tercihler);
             }
@@ -1546,28 +1667,32 @@ function kullaniciTercihleriniGuncelle($kullaniciId, $tercihler)
         if ($kullanici['id'] === $kullaniciId) {
             // Mevcut tercihleri al veya varsayılan değerleri kullan
             $mevcutTercihler = $kullanici['tercihler'] ?? $varsayilanTercihler;
-            
+
             // Yeni tercihleri mevcut tercihlerle birleştir
             $kullanici['tercihler'] = array_merge($mevcutTercihler, $tercihler);
-            
+
             // Tercih değerlerini doğrula ve düzelt
-            $kullanici['tercihler']['max_ardisik_vardiya'] = 
+            $kullanici['tercihler']['max_ardisik_vardiya'] =
                 min(7, max(1, intval($kullanici['tercihler']['max_ardisik_vardiya'])));
-            
-            $kullanici['tercihler']['min_gunluk_dinlenme'] = 
+
+            $kullanici['tercihler']['min_gunluk_dinlenme'] =
                 min(24, max(8, intval($kullanici['tercihler']['min_gunluk_dinlenme'])));
-            
+
             // Geçersiz gün indekslerini temizle
             $kullanici['tercihler']['tercih_edilmeyen_gunler'] = array_filter(
                 $kullanici['tercihler']['tercih_edilmeyen_gunler'],
-                function($gun) { return is_numeric($gun) && $gun >= 0 && $gun <= 6; }
+                function ($gun) {
+                    return is_numeric($gun) && $gun >= 0 && $gun <= 6;
+                }
             );
-            
+
             // Geçersiz vardiya türlerini temizle
             $vardiyaTurleri = array_keys(vardiyaTurleriniGetir());
             $kullanici['tercihler']['tercih_edilen_vardiyalar'] = array_filter(
                 $kullanici['tercihler']['tercih_edilen_vardiyalar'],
-                function($vardiya) use ($vardiyaTurleri) { return in_array($vardiya, $vardiyaTurleri); }
+                function ($vardiya) use ($vardiyaTurleri) {
+                    return in_array($vardiya, $vardiyaTurleri);
+                }
             );
 
             veriYaz($data);
@@ -1575,7 +1700,7 @@ function kullaniciTercihleriniGuncelle($kullaniciId, $tercihler)
             return true;
         }
     }
-    
+
     throw new Exception('Kullanıcı bulunamadı.');
 }
 
@@ -1615,7 +1740,7 @@ function bildirimTercihiGuncelle($kullaniciId, $bildirimTercihleri)
             return true;
         }
     }
-    
+
     throw new Exception('Kullanıcı bulunamadı.');
 }
 
@@ -1627,11 +1752,21 @@ function tarihFormatla($timestamp, $format = 'kisa')
     }
 
     $tarih = date_create(date('Y-m-d H:i:s', $timestamp));
-    
+
     $gunler = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
     $aylar = [
-        'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+        'Ocak',
+        'Şubat',
+        'Mart',
+        'Nisan',
+        'Mayıs',
+        'Haziran',
+        'Temmuz',
+        'Ağustos',
+        'Eylül',
+        'Ekim',
+        'Kasım',
+        'Aralık'
     ];
 
     switch ($format) {
@@ -1668,7 +1803,7 @@ function tarihFormatla($timestamp, $format = 'kisa')
 function vardiyaTurleriniGetir()
 {
     $data = veriOku();
-    
+
     if (!isset($data['sistem_ayarlari']['vardiya_turleri'])) {
         // Varsayılan vardiya türleri
         return [
@@ -1708,7 +1843,7 @@ function vardiyaTurleriniGetir()
             'sure' => 8
         ], $vardiya);
     }
-    
+
     return $vardiyalar;
 }
 
