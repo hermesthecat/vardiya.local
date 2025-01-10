@@ -6,6 +6,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personel Vardiya Sistemi</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- PWA için gerekli meta etiketleri -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4caf50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Vardiya">
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    
+    <!-- PWA ve Bildirim Scripti -->
+    <script>
+        // Service Worker Kaydı
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker kaydı başarılı:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker kaydı başarısız:', error);
+                    });
+            });
+        }
+
+        // Bildirim İzni İsteme
+        function bildirimIzniIste() {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('Bildirim izni verildi');
+                    // Push aboneliği oluştur
+                    pushAboneligiOlustur();
+                }
+            });
+        }
+
+        // Push Aboneliği Oluşturma
+        function pushAboneligiOlustur() {
+            navigator.serviceWorker.ready.then((registration) => {
+                const subscribeOptions = {
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array('YOUR_PUBLIC_VAPID_KEY')
+                };
+
+                return registration.pushManager.subscribe(subscribeOptions);
+            }).then((pushSubscription) => {
+                console.log('Push aboneliği başarılı:', JSON.stringify(pushSubscription));
+                // Abonelik bilgilerini sunucuya gönder
+                return fetch('push_abone_kaydet.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(pushSubscription)
+                });
+            });
+        }
+
+        // Base64 URL'yi Uint8Array'e Dönüştürme
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        // Sayfa yüklendiğinde bildirim izni iste
+        window.addEventListener('load', () => {
+            if ('Notification' in window) {
+                if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    setTimeout(bildirimIzniIste, 3000); // 3 saniye sonra izin iste
+                }
+            }
+        });
+    </script>
 </head>
 
 <body>
