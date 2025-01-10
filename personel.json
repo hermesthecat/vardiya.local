@@ -3,12 +3,28 @@
     {
       "id": "64f1a2b3c4d5",
       "ad": "Ahmet",
-      "soyad": "Yılmaz"
+      "soyad": "Yılmaz",
+      "yetki": "admin",
+      "email": "ahmet@firma.com",
+      "telefon": "5551234567",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["sabah", "aksam"],
+        "tercih_edilmeyen_gunler": ["pazar"]
+      }
     },
     {
       "id": "64f1a2b3c4d6",
       "ad": "Ayşe",
-      "soyad": "Demir"
+      "soyad": "Demir",
+      "yetki": "personel",
+      "email": "ayse@firma.com",
+      "telefon": "5551234568",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["sabah"],
+        "tercih_edilmeyen_gunler": ["cumartesi", "pazar"]
+      }
     },
     {
       "id": "64f1a2b3c4d7",
@@ -26,13 +42,17 @@
       "id": "64f1a2b3c4e1",
       "personel_id": "64f1a2b3c4d5",
       "tarih": "2024-01-15",
-      "vardiya_turu": "sabah"
+      "vardiya_turu": "sabah",
+      "notlar": "Özel proje toplantısı var",
+      "durum": "onaylandi"
     },
     {
       "id": "64f1a2b3c4e2",
       "personel_id": "64f1a2b3c4d6",
       "tarih": "2024-01-15",
-      "vardiya_turu": "aksam"
+      "vardiya_turu": "aksam",
+      "notlar": "",
+      "durum": "onaylandi"
     },
     {
       "id": "64f1a2b3c4e3",
@@ -52,5 +72,83 @@
       "tarih": "2024-01-16",
       "vardiya_turu": "aksam"
     }
-  ]
+  ],
+  "izinler": [
+    {
+      "id": "64f1a2b3c4f1",
+      "personel_id": "64f1a2b3c4d5",
+      "baslangic_tarihi": "2024-02-01",
+      "bitis_tarihi": "2024-02-05",
+      "izin_turu": "yillik",
+      "aciklama": "Yıllık izin",
+      "durum": "onaylandi",
+      "onaylayan_id": "64f1a2b3c4d6",
+      "onay_tarihi": "2024-01-10"
+    }
+  ],
+  "vardiya_talepleri": [
+    {
+      "id": "64f1a2b3c4g1",
+      "talep_eden_id": "64f1a2b3c4d5",
+      "degisim_yapilacak_vardiya_id": "64f1a2b3c4e1",
+      "talep_edilen_tarih": "2024-01-20",
+      "talep_edilen_vardiya_turu": "aksam",
+      "aciklama": "Özel durum nedeniyle değişim talebi",
+      "durum": "beklemede",
+      "talep_tarihi": "2024-01-08"
+    }
+  ],
+  "izin_talepleri": [
+    {
+      "id": "64f1a2b3c4h1",
+      "personel_id": "64f1a2b3c4d6",
+      "baslangic_tarihi": "2024-03-01",
+      "bitis_tarihi": "2024-03-03",
+      "izin_turu": "yillik",
+      "aciklama": "Aile ziyareti",
+      "durum": "beklemede",
+      "talep_tarihi": "2024-01-10"
+    }
+  ],
+  "bildirim_abonelikleri": [
+    {
+      "personel_id": "64f1a2b3c4d5",
+      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+      "auth": "auth_key_1",
+      "p256dh": "p256dh_key_1",
+      "kayit_tarihi": "2024-01-10",
+      "son_guncelleme": "2024-01-10"
+    }
+  ],
+  "sistem_ayarlari": {
+    "vardiya_turleri": [
+      {
+        "id": "sabah",
+        "baslangic": "08:00",
+        "bitis": "16:00"
+      },
+      {
+        "id": "aksam",
+        "baslangic": "16:00",
+        "bitis": "24:00"
+      },
+      {
+        "id": "gece",
+        "baslangic": "24:00",
+        "bitis": "08:00"
+      }
+    ],
+    "izin_turleri": [
+      "yillik",
+      "dogum",
+      "olum",
+      "hastalik",
+      "idari"
+    ],
+    "bildirim_ayarlari": {
+      "vardiya_hatirlatma_suresi": 24,
+      "izin_onay_bildirimi": true,
+      "vardiya_degisiklik_bildirimi": true
+    }
+  }
 }
