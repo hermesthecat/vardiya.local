@@ -17,6 +17,7 @@ body {
 h1 {
   color: #333;
   text-align: center;
+  margin: 0;
 }
 
 .form-section {
@@ -271,4 +272,85 @@ input[type="radio"]:checked + .vardiya-btn.gece {
   background-color: #e8f5e9;
   color: #2e7d32;
   border: 1px solid #a5d6a7;
+}
+
+/* Header Navigation */
+.header-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Personel Listesi */
+.personel-liste {
+  margin-top: 20px;
+}
+
+.tablo-container {
+  overflow-x: auto;
+}
+
+.personel-liste table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.personel-liste th,
+.personel-liste td {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.personel-liste th {
+  background-color: #4caf50;
+  color: white;
+}
+
+.personel-liste tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.personel-liste tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Butonlar */
+.btn-duzenle,
+.btn-sil {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 0 5px;
+}
+
+.btn-duzenle {
+  background-color: #2196f3;
+  color: white;
+}
+
+.btn-sil {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-duzenle:hover {
+  background-color: #1976d2;
+}
+
+.btn-sil:hover {
+  background-color: #d32f2f;
+}
+
+/* Textarea */
+textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
 }

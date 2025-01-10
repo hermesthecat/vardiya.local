@@ -16,6 +16,72 @@ function veriYaz($data)
     file_put_contents('personel.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
 
+// Tüm personelleri getir
+function tumPersonelleriGetir()
+{
+    $data = veriOku();
+    return $data['personel'];
+}
+
+// Personel vardiya bilgilerini getir
+function personelVardiyaBilgisiGetir($personelId)
+{
+    $data = veriOku();
+    $toplam = 0;
+    $sonVardiya = null;
+
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['personel_id'] === $personelId) {
+            $toplam++;
+            if (!$sonVardiya || strtotime($vardiya['tarih']) > strtotime($sonVardiya)) {
+                $sonVardiya = $vardiya['tarih'];
+            }
+        }
+    }
+
+    return [
+        'toplam_vardiya' => $toplam,
+        'son_vardiya' => $sonVardiya
+    ];
+}
+
+// Personel düzenleme
+function personelDuzenle($personelId, $ad, $soyad, $notlar)
+{
+    $data = veriOku();
+
+    foreach ($data['personel'] as &$personel) {
+        if ($personel['id'] === $personelId) {
+            $personel['ad'] = $ad;
+            $personel['soyad'] = $soyad;
+            $personel['notlar'] = $notlar;
+            break;
+        }
+    }
+
+    veriYaz($data);
+}
+
+// Personel silme
+function personelSil($personelId)
+{
+    $data = veriOku();
+
+    // Personelin vardiyalarını kontrol et
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['personel_id'] === $personelId) {
+            throw new Exception('Bu personele ait vardiyalar bulunduğu için silinemez. Önce vardiyaları silmelisiniz.');
+        }
+    }
+
+    // Personeli sil
+    $data['personel'] = array_filter($data['personel'], function ($personel) use ($personelId) {
+        return $personel['id'] !== $personelId;
+    });
+
+    veriYaz($data);
+}
+
 // Ardışık çalışma günlerini kontrol et
 function ardisikCalismaGunleriniKontrolEt($personelId, $tarih)
 {
@@ -65,7 +131,8 @@ function personelEkle($ad, $soyad)
     $yeniPersonel = [
         'id' => uniqid(),
         'ad' => $ad,
-        'soyad' => $soyad
+        'soyad' => $soyad,
+        'notlar' => ''
     ];
     $data['personel'][] = $yeniPersonel;
     veriYaz($data);
