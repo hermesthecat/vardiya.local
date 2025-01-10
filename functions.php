@@ -892,28 +892,68 @@ function akilliVardiyaOnerisiOlustur($tarih, $vardiyaTuru)
 // Kullanıcı girişi
 function kullaniciGiris($email, $sifre)
 {
-    $data = veriOku();
-
-    if (!isset($data['kullanicilar'])) {
-        throw new Exception('Kullanıcı bulunamadı.');
-    }
-
-    foreach ($data['kullanicilar'] as $kullanici) {
-        if ($kullanici['email'] === $email && password_verify($sifre, $kullanici['sifre'])) {
-            // Oturum başlat
-            session_start();
-            $_SESSION['kullanici_id'] = $kullanici['id'];
-            $_SESSION['rol'] = $kullanici['rol'];
-            $_SESSION['ad_soyad'] = $kullanici['ad'] . ' ' . $kullanici['soyad'];
-
-            // Giriş logunu kaydet
-            islemLogKaydet('giris', 'Kullanıcı girişi yapıldı');
-
-            return true;
+    try {
+        // Boş kontrolleri
+        if (empty($email) || empty($sifre)) {
+            throw new Exception('E-posta ve şifre alanları boş bırakılamaz.');
         }
-    }
 
-    throw new Exception('E-posta veya şifre hatalı.');
+        // E-posta formatı kontrolü
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Geçersiz e-posta formatı.');
+        }
+
+        $data = veriOku();
+
+        // Personel dizisi kontrolü
+        if (!isset($data['personel']) || empty($data['personel'])) {
+            throw new Exception('Sistemde kayıtlı personel bulunmuyor.');
+        }
+
+        // Kullanıcı arama ve doğrulama
+        foreach ($data['personel'] as $personel) {
+            if ($personel['email'] === $email) {
+                // Şifre kontrolü - Eğer şifre hash'lenmemişse direkt karşılaştır
+                // TODO: Şifreleri hash'lemeyi unutma!
+                if ($sifre === $personel['sifre']) {
+                    // Varolan session'ı temizle
+                    if (session_status() === PHP_SESSION_ACTIVE) {
+                        session_destroy();
+                    }
+
+                    // Yeni session başlat
+                    session_start();
+                    
+                    // Session'a kullanıcı bilgilerini kaydet
+                    $_SESSION['kullanici_id'] = $personel['id'];
+                    $_SESSION['email'] = $personel['email'];
+                    $_SESSION['rol'] = $personel['yetki'];
+                    $_SESSION['ad_soyad'] = $personel['ad'] . ' ' . $personel['soyad'];
+                    $_SESSION['giris_zamani'] = time();
+
+                    // Tercihler varsa kaydet
+                    if (isset($personel['tercihler'])) {
+                        $_SESSION['tercihler'] = $personel['tercihler'];
+                    }
+
+                    // Giriş logunu kaydet
+                    islemLogKaydet('giris', 'Başarılı giriş: ' . $personel['email']);
+
+                    return true;
+                } else {
+                    throw new Exception('Hatalı şifre.');
+                }
+            }
+        }
+
+        throw new Exception('Bu e-posta adresi ile kayıtlı personel bulunamadı.');
+    } catch (Exception $e) {
+        // Başarısız giriş logunu kaydet
+        if (isset($email)) {
+            islemLogKaydet('giris_hata', 'Başarısız giriş denemesi: ' . $email . ' - ' . $e->getMessage());
+        }
+        throw $e;
+    }
 }
 
 // Kullanıcı çıkışı
