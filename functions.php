@@ -4,7 +4,11 @@
 function veriOku()
 {
     if (!file_exists('personel.json')) {
-        return ['personel' => [], 'vardiyalar' => []];
+        return [
+            'personel' => [],
+            'vardiyalar' => [],
+            'vardiya_talepleri' => []
+        ];
     }
     $json = file_get_contents('personel.json');
     return json_decode($json, true);
@@ -14,6 +18,112 @@ function veriOku()
 function veriYaz($data)
 {
     file_put_contents('personel.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
+
+// Vardiya silme
+function vardiyaSil($vardiyaId)
+{
+    $data = veriOku();
+    $data['vardiyalar'] = array_filter($data['vardiyalar'], function ($vardiya) use ($vardiyaId) {
+        return $vardiya['id'] !== $vardiyaId;
+    });
+    veriYaz($data);
+}
+
+// Vardiya düzenleme
+function vardiyaDuzenle($vardiyaId, $personelId, $tarih, $vardiyaTuru, $notlar = '')
+{
+    // Vardiya çakışması kontrolü
+    if (vardiyaCakismasiVarMi($personelId, $tarih, $vardiyaTuru, $vardiyaId)) {
+        throw new Exception('Bu personelin seçilen tarihte başka bir vardiyası bulunuyor.');
+    }
+
+    // Ardışık çalışma kontrolü
+    if (!ardisikCalismaGunleriniKontrolEt($personelId, $tarih, $vardiyaId)) {
+        throw new Exception('Bu personel 6 gün üst üste çalıştığı için bu tarihe vardiya eklenemez. En az 1 gün izin kullanması gerekiyor.');
+    }
+
+    $data = veriOku();
+    foreach ($data['vardiyalar'] as &$vardiya) {
+        if ($vardiya['id'] === $vardiyaId) {
+            $vardiya['personel_id'] = $personelId;
+            $vardiya['tarih'] = $tarih;
+            $vardiya['vardiya_turu'] = $vardiyaTuru;
+            $vardiya['notlar'] = $notlar;
+            break;
+        }
+    }
+    veriYaz($data);
+}
+
+// Vardiya çakışması kontrolü
+function vardiyaCakismasiVarMi($personelId, $tarih, $vardiyaTuru, $haricVardiyaId = null)
+{
+    $data = veriOku();
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if (
+            $vardiya['personel_id'] === $personelId &&
+            $vardiya['tarih'] === $tarih &&
+            $vardiya['id'] !== $haricVardiyaId
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Vardiya değişim talebi oluşturma
+function vardiyaDegisimTalebiOlustur($vardiyaId, $talepEdenPersonelId, $aciklama)
+{
+    $data = veriOku();
+    $yeniTalep = [
+        'id' => uniqid(),
+        'vardiya_id' => $vardiyaId,
+        'talep_eden_personel_id' => $talepEdenPersonelId,
+        'durum' => 'beklemede', // beklemede, onaylandi, reddedildi
+        'aciklama' => $aciklama,
+        'olusturma_tarihi' => date('Y-m-d H:i:s')
+    ];
+    $data['vardiya_talepleri'][] = $yeniTalep;
+    veriYaz($data);
+}
+
+// Vardiya değişim talebini onayla/reddet
+function vardiyaTalebiGuncelle($talepId, $durum)
+{
+    $data = veriOku();
+    foreach ($data['vardiya_talepleri'] as &$talep) {
+        if ($talep['id'] === $talepId) {
+            $talep['durum'] = $durum;
+            $talep['guncelleme_tarihi'] = date('Y-m-d H:i:s');
+            break;
+        }
+    }
+    veriYaz($data);
+}
+
+// Vardiya detaylarını getir
+function vardiyaDetayGetir($vardiyaId)
+{
+    $data = veriOku();
+    foreach ($data['vardiyalar'] as $vardiya) {
+        if ($vardiya['id'] === $vardiyaId) {
+            $personel = array_filter($data['personel'], function ($p) use ($vardiya) {
+                return $p['id'] === $vardiya['personel_id'];
+            });
+            $personel = reset($personel);
+
+            return [
+                'id' => $vardiya['id'],
+                'personel_id' => $vardiya['personel_id'],
+                'personel_ad' => $personel['ad'] . ' ' . $personel['soyad'],
+                'tarih' => $vardiya['tarih'],
+                'vardiya_turu' => $vardiya['vardiya_turu'],
+                'notlar' => $vardiya['notlar'] ?? ''
+            ];
+        }
+    }
+    return null;
 }
 
 // Tüm personelleri getir
@@ -139,8 +249,13 @@ function personelEkle($ad, $soyad)
 }
 
 // Vardiya ekleme
-function vardiyaEkle($personelId, $tarih, $vardiyaTuru)
+function vardiyaEkle($personelId, $tarih, $vardiyaTuru, $notlar = '')
 {
+    // Vardiya çakışması kontrolü
+    if (vardiyaCakismasiVarMi($personelId, $tarih, $vardiyaTuru)) {
+        throw new Exception('Bu personelin seçilen tarihte başka bir vardiyası bulunuyor.');
+    }
+
     // Ardışık çalışma günü kontrolü
     if (!ardisikCalismaGunleriniKontrolEt($personelId, $tarih)) {
         throw new Exception('Bu personel 6 gün üst üste çalıştığı için bu tarihe vardiya eklenemez. En az 1 gün izin kullanması gerekiyor.');
@@ -151,10 +266,13 @@ function vardiyaEkle($personelId, $tarih, $vardiyaTuru)
         'id' => uniqid(),
         'personel_id' => $personelId,
         'tarih' => $tarih,
-        'vardiya_turu' => $vardiyaTuru
+        'vardiya_turu' => $vardiyaTuru,
+        'notlar' => $notlar
     ];
     $data['vardiyalar'][] = $yeniVardiya;
     veriYaz($data);
+
+    return $yeniVardiya['id'];
 }
 
 // Personel listesini getirme (select için)
@@ -193,6 +311,7 @@ function gunlukVardiyalariGetir($tarih)
             ];
 
             $gunlukVardiyalar[] = [
+                'id' => $vardiya['id'],
                 'personel' => $personel['ad'] . ' ' . $personel['soyad'],
                 'vardiya' => $vardiyaTurleri[$vardiya['vardiya_turu']]
             ];
@@ -242,9 +361,12 @@ function takvimOlustur($ay, $yil)
         if (!empty($vardiyalar)) {
             $output .= '<div class="vardiyalar">';
             foreach ($vardiyalar as $vardiya) {
-                $output .= '<div class="vardiya-item" title="' . htmlspecialchars($vardiya['personel']) . '">';
-                $output .= htmlspecialchars($vardiya['vardiya']);
-                $output .= '</div>';
+                $output .= sprintf(
+                    '<a href="vardiya.php?vardiya_id=%s" class="vardiya-item" title="%s">%s</a>',
+                    $vardiya['id'],
+                    htmlspecialchars($vardiya['personel']),
+                    htmlspecialchars($vardiya['vardiya'])
+                );
             }
             $output .= '</div>';
         }
