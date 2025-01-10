@@ -11,6 +11,14 @@
         "bildirimler": true,
         "tercih_edilen_vardiyalar": ["sabah", "aksam"],
         "tercih_edilmeyen_gunler": ["pazar"]
+      },
+      "push_abonelik": {
+        "endpoint": "",
+        "keys": {
+          "p256dh": "",
+          "auth": ""
+        },
+        "son_guncelleme": 0
       }
     },
     {
@@ -168,6 +176,41 @@
       "vardiya_hatirlatma_suresi": 24,
       "izin_onay_bildirimi": true,
       "vardiya_degisiklik_bildirimi": true
+    }
+  },
+  "push_abonelikleri": [
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+      "expirationTime": null,
+      "keys": {
+        "p256dh": "BASE64_ENCODED_KEY",
+        "auth": "BASE64_ENCODED_AUTH"
+      },
+      "kullanici_id": "64f1a2b3c4d5",
+      "cihaz_bilgisi": {
+        "platform": "web",
+        "tarayici": "chrome",
+        "son_aktivite": 1705324800
+      }
+    }
+  ],
+  "bildirim_ayarlari": {
+    "vapid": {
+      "subject": "mailto:your@email.com",
+      "publicKey": "YOUR_PUBLIC_VAPID_KEY",
+      "privateKey": "YOUR_PRIVATE_VAPID_KEY"
+    },
+    "bildirim_tipleri": {
+      "vardiya_hatirlatma": true,
+      "vardiya_degisiklik": true,
+      "izin_talebi": true,
+      "sistem_duyurusu": true
+    },
+    "varsayilan_mesajlar": {
+      "vardiya_hatirlatma": "Yarın vardiya başlangıcınız bulunmaktadır.",
+      "vardiya_degisiklik": "Vardiya planınızda değişiklik yapıldı.",
+      "izin_talebi": "Yeni bir izin talebiniz var.",
+      "sistem_duyurusu": "Yeni bir sistem duyurusu bulunmaktadır."
     }
   }
 }
