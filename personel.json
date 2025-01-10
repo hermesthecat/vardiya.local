@@ -12,13 +12,21 @@
         "tercih_edilen_vardiyalar": ["sabah", "aksam"],
         "tercih_edilmeyen_gunler": ["pazar"]
       },
-      "push_abonelik": {
-        "endpoint": "",
-        "keys": {
-          "p256dh": "",
-          "auth": ""
+      "izin_haklari": {
+        "yillik": {
+          "toplam": 14,
+          "kullanilan": 4,
+          "kalan": 10,
+          "son_guncelleme": 1704844800
         },
-        "son_guncelleme": 0
+        "mazeret": {
+          "toplam": 5,
+          "kullanilan": 1,
+          "kalan": 4
+        },
+        "hastalik": {
+          "kullanilan": 2
+        }
       }
     },
     {
@@ -110,7 +118,12 @@
       "aciklama": "Yıllık izin",
       "durum": "onaylandi",
       "onaylayan_id": "64f1a2b3c4d6",
-      "onay_tarihi": 1704844800
+      "onay_tarihi": 1704844800,
+      "olusturma_tarihi": 1704758400,
+      "guncelleme_tarihi": 1704844800,
+      "gun_sayisi": 4,
+      "belgeler": [],
+      "notlar": ""
     }
   ],
   "vardiya_talepleri": [
@@ -134,7 +147,12 @@
       "izin_turu": "yillik",
       "aciklama": "Aile ziyareti",
       "durum": "beklemede",
-      "talep_tarihi": 1704844800
+      "talep_tarihi": 1704844800,
+      "gun_sayisi": 3,
+      "yonetici_notu": "",
+      "red_sebebi": "",
+      "belgeler": [],
+      "hatirlatma_gonderildi": false
     }
   ],
   "bildirim_abonelikleri": [
@@ -165,17 +183,51 @@
         "bitis": "08:00"
       }
     ],
-    "izin_turleri": [
-      "yillik",
-      "dogum",
-      "olum",
-      "hastalik",
-      "idari"
-    ],
-    "bildirim_ayarlari": {
-      "vardiya_hatirlatma_suresi": 24,
-      "izin_onay_bildirimi": true,
-      "vardiya_degisiklik_bildirimi": true
+    "izin_turleri": {
+      "yillik": {
+        "ad": "Yıllık İzin",
+        "varsayilan_hak": 14,
+        "max_ardisik_gun": 21,
+        "belge_gerekli": false,
+        "onay_gerekli": true
+      },
+      "dogum": {
+        "ad": "Doğum İzni",
+        "varsayilan_hak": null,
+        "max_ardisik_gun": null,
+        "belge_gerekli": true,
+        "onay_gerekli": true
+      },
+      "olum": {
+        "ad": "Ölüm İzni",
+        "varsayilan_hak": 3,
+        "max_ardisik_gun": 3,
+        "belge_gerekli": true,
+        "onay_gerekli": false
+      },
+      "hastalik": {
+        "ad": "Hastalık İzni",
+        "varsayilan_hak": null,
+        "max_ardisik_gun": null,
+        "belge_gerekli": true,
+        "onay_gerekli": true
+      },
+      "mazeret": {
+        "ad": "Mazeret İzni",
+        "varsayilan_hak": 5,
+        "max_ardisik_gun": 2,
+        "belge_gerekli": false,
+        "onay_gerekli": true
+      }
+    },
+    "izin_ayarlari": {
+      "max_bekleyen_talep": 3,
+      "min_talep_gun": 3,
+      "otomatik_onay_gun": 1,
+      "hatirlatma_suresi": 48,
+      "yil_sonu_devir": false,
+      "hafta_sonu_dahil": false,
+      "resmi_tatil_dahil": false
     }
   },
   "push_abonelikleri": [
