@@ -18,10 +18,41 @@
             vardiyaEkle($_POST['personel_id'], $_POST['tarih'], $_POST['vardiya_turu']);
         }
     }
+
+    // Takvim için ay ve yıl
+    $ay = isset($_GET['ay']) ? intval($_GET['ay']) : intval(date('m'));
+    $yil = isset($_GET['yil']) ? intval($_GET['yil']) : intval(date('Y'));
     ?>
 
     <div class="container">
         <h1>Personel Vardiya Sistemi</h1>
+        
+        <!-- Takvim Navigasyonu -->
+        <div class="takvim-nav">
+            <?php
+            $oncekiAy = $ay - 1;
+            $oncekiYil = $yil;
+            if ($oncekiAy < 1) {
+                $oncekiAy = 12;
+                $oncekiYil--;
+            }
+            
+            $sonrakiAy = $ay + 1;
+            $sonrakiYil = $yil;
+            if ($sonrakiAy > 12) {
+                $sonrakiAy = 1;
+                $sonrakiYil++;
+            }
+            ?>
+            <a href="?ay=<?php echo $oncekiAy; ?>&yil=<?php echo $oncekiYil; ?>" class="nav-btn">&lt; Önceki Ay</a>
+            <h2><?php echo date('F Y', mktime(0, 0, 0, $ay, 1, $yil)); ?></h2>
+            <a href="?ay=<?php echo $sonrakiAy; ?>&yil=<?php echo $sonrakiYil; ?>" class="nav-btn">Sonraki Ay &gt;</a>
+        </div>
+
+        <!-- Takvim -->
+        <div class="takvim">
+            <?php echo takvimOlustur($ay, $yil); ?>
+        </div>
         
         <!-- Personel Ekleme Formu -->
         <div class="form-section">
@@ -48,12 +79,6 @@
                 </select>
                 <button type="submit" name="vardiya_ekle">Vardiya Ekle</button>
             </form>
-        </div>
-
-        <!-- Vardiya Listesi -->
-        <div class="list-section">
-            <h2>Vardiya Listesi</h2>
-            <?php echo vardiyaListesiGetir(); ?>
         </div>
     </div>
 </body>

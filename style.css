@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
     background-color: white;
     padding: 20px;
@@ -49,19 +49,80 @@ button:hover {
     background-color: #45a049;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+/* Takvim Stilleri */
+.takvim-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
-th, td {
-    padding: 10px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-th {
+.nav-btn {
+    padding: 8px 16px;
     background-color: #4CAF50;
     color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.nav-btn:hover {
+    background-color: #45a049;
+}
+
+.takvim-tablo {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.takvim-tablo th {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+.takvim-tablo td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    height: 100px;
+    vertical-align: top;
+}
+
+.takvim-tablo td.bos {
+    background-color: #f9f9f9;
+}
+
+.gun-baslik {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.vardiyalar {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.vardiya-item {
+    background-color: #4CAF50;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.vardiya-item[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-top: -25px;
+    margin-left: 10px;
+    white-space: nowrap;
 } 

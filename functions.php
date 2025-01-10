@@ -54,41 +54,91 @@ function personelListesiGetir() {
     return $output;
 }
 
-// Vardiya listesini getirme
-function vardiyaListesiGetir() {
+// Belirli bir tarihteki vardiyaları getir
+function gunlukVardiyalariGetir($tarih) {
     $data = veriOku();
-    $output = '<table border="1">
-        <tr>
-            <th>Personel</th>
-            <th>Tarih</th>
-            <th>Vardiya</th>
-        </tr>';
+    $gunlukVardiyalar = [];
     
     foreach ($data['vardiyalar'] as $vardiya) {
-        $personel = array_filter($data['personel'], function($p) use ($vardiya) {
-            return $p['id'] === $vardiya['personel_id'];
-        });
-        $personel = reset($personel);
-        
-        $vardiyaTurleri = [
-            'sabah' => 'Sabah (08:00-16:00)',
-            'aksam' => 'Akşam (16:00-24:00)',
-            'gece' => 'Gece (24:00-08:00)'
-        ];
-        
-        $output .= sprintf(
-            '<tr>
-                <td>%s %s</td>
-                <td>%s</td>
-                <td>%s</td>
-            </tr>',
-            htmlspecialchars($personel['ad']),
-            htmlspecialchars($personel['soyad']),
-            date('d.m.Y', strtotime($vardiya['tarih'])),
-            $vardiyaTurleri[$vardiya['vardiya_turu']]
-        );
+        if ($vardiya['tarih'] === $tarih) {
+            $personel = array_filter($data['personel'], function($p) use ($vardiya) {
+                return $p['id'] === $vardiya['personel_id'];
+            });
+            $personel = reset($personel);
+            
+            $vardiyaTurleri = [
+                'sabah' => 'S',
+                'aksam' => 'A',
+                'gece' => 'G'
+            ];
+            
+            $gunlukVardiyalar[] = [
+                'personel' => $personel['ad'] . ' ' . $personel['soyad'],
+                'vardiya' => $vardiyaTurleri[$vardiya['vardiya_turu']]
+            ];
+        }
     }
     
-    $output .= '</table>';
+    return $gunlukVardiyalar;
+}
+
+// Takvim oluşturma
+function takvimOlustur($ay, $yil) {
+    $ilkGun = mktime(0, 0, 0, $ay, 1, $yil);
+    $ayinIlkGunu = date('w', $ilkGun);
+    $aydakiGunSayisi = date('t', $ilkGun);
+    
+    $output = '<table class="takvim-tablo">';
+    $output .= '<tr>
+        <th>Pzr</th>
+        <th>Pzt</th>
+        <th>Sal</th>
+        <th>Çar</th>
+        <th>Per</th>
+        <th>Cum</th>
+        <th>Cmt</th>
+    </tr>';
+    
+    // Boş günleri ekle
+    $output .= '<tr>';
+    for ($i = 0; $i < $ayinIlkGunu; $i++) {
+        $output .= '<td class="bos"></td>';
+    }
+    
+    // Günleri ekle
+    $gunSayaci = $ayinIlkGunu;
+    for ($gun = 1; $gun <= $aydakiGunSayisi; $gun++) {
+        if ($gunSayaci % 7 === 0 && $gun !== 1) {
+            $output .= '</tr><tr>';
+        }
+        
+        $tarih = sprintf('%04d-%02d-%02d', $yil, $ay, $gun);
+        $vardiyalar = gunlukVardiyalariGetir($tarih);
+        
+        $output .= '<td class="gun">';
+        $output .= '<div class="gun-baslik">' . $gun . '</div>';
+        
+        if (!empty($vardiyalar)) {
+            $output .= '<div class="vardiyalar">';
+            foreach ($vardiyalar as $vardiya) {
+                $output .= '<div class="vardiya-item" title="' . htmlspecialchars($vardiya['personel']) . '">';
+                $output .= htmlspecialchars($vardiya['vardiya']);
+                $output .= '</div>';
+            }
+            $output .= '</div>';
+        }
+        
+        $output .= '</td>';
+        
+        $gunSayaci++;
+    }
+    
+    // Kalan boş günleri ekle
+    while ($gunSayaci % 7 !== 0) {
+        $output .= '<td class="bos"></td>';
+        $gunSayaci++;
+    }
+    
+    $output .= '</tr></table>';
     return $output;
 } 
