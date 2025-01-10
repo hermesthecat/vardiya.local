@@ -1042,3 +1042,71 @@ function islemLoglariGetir($baslangicTarih = null, $bitisTarih = null, $islemTur
     
     return $loglar;
 }
+
+// Kullanıcı tercihlerini güncelleme
+function kullaniciTercihleriniGuncelle($kullaniciId, $tercihler) {
+    $data = veriOku();
+    foreach ($data['personel'] as &$kullanici) {
+        if ($kullanici['id'] === $kullaniciId) {
+            $kullanici['tercihler'] = $tercihler;
+            veriYaz($data);
+            
+            islemLogKaydet('tercih_guncelle', 'Kullanıcı tercihleri güncellendi');
+            return true;
+        }
+    }
+    throw new Exception('Kullanıcı bulunamadı.');
+}
+
+// Kullanıcı bildirim tercihini güncelleme
+function bildirimTercihiGuncelle($kullaniciId, $bildirimDurumu) {
+    $data = veriOku();
+    foreach ($data['personel'] as &$kullanici) {
+        if ($kullanici['id'] === $kullaniciId) {
+            $kullanici['tercihler']['bildirimler'] = $bildirimDurumu;
+            veriYaz($data);
+            
+            islemLogKaydet('bildirim_tercih', 'Bildirim tercihi güncellendi: ' . ($bildirimDurumu ? 'Aktif' : 'Pasif'));
+            return true;
+        }
+    }
+    throw new Exception('Kullanıcı bulunamadı.');
+}
+
+// Tarih formatlama fonksiyonu
+function tarihFormatla($timestamp, $format = 'kisa') {
+    if (!$timestamp) return '';
+    
+    $tarih = date_create('@' . $timestamp);
+    if (!$tarih) return '';
+    
+    $aylar = [
+        'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    
+    $gunler = [
+        'Pazar', 'Pazartesi', 'Salı', 'Çarşamba',
+        'Perşembe', 'Cuma', 'Cumartesi'
+    ];
+
+    switch ($format) {
+        case 'kisa':
+            return date_format($tarih, 'd.m.Y');
+            
+        case 'uzun':
+            return date_format($tarih, 'j') . ' ' . $aylar[date_format($tarih, 'n') - 1] . ' ' . date_format($tarih, 'Y');
+            
+        case 'tam':
+            return $gunler[date_format($tarih, 'w')] . ', ' . date_format($tarih, 'j') . ' ' . $aylar[date_format($tarih, 'n') - 1] . ' ' . date_format($tarih, 'Y');
+            
+        case 'saat':
+            return date_format($tarih, 'H:i');
+            
+        case 'tam_saat':
+            return date_format($tarih, 'j') . ' ' . $aylar[date_format($tarih, 'n') - 1] . ' ' . date_format($tarih, 'Y') . ' ' . date_format($tarih, 'H:i');
+            
+        default:
+            return date_format($tarih, 'd.m.Y');
+    }
+}
