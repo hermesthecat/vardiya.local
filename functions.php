@@ -7,7 +7,9 @@ function veriOku()
         return [
             'personel' => [],
             'vardiyalar' => [],
-            'vardiya_talepleri' => []
+            'vardiya_talepleri' => [],
+            'izinler' => [],
+            'izin_talepleri' => []
         ];
     }
     $json = file_get_contents('personel.json');
@@ -384,4 +386,172 @@ function takvimOlustur($ay, $yil)
 
     $output .= '</tr></table>';
     return $output;
+}
+
+// İzin talebi oluşturma
+function izinTalebiOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTuru, $aciklama)
+{
+    // Tarih kontrolü
+    if (strtotime($baslangicTarihi) > strtotime($bitisTarihi)) {
+        throw new Exception('Bitiş tarihi başlangıç tarihinden önce olamaz.');
+    }
+
+    // Vardiya çakışması kontrolü
+    $data = veriOku();
+    $baslangic = new DateTime($baslangicTarihi);
+    $bitis = new DateTime($bitisTarihi);
+    $interval = new DateInterval('P1D');
+    $daterange = new DatePeriod($baslangic, $interval, $bitis->modify('+1 day'));
+
+    foreach ($daterange as $date) {
+        foreach ($data['vardiyalar'] as $vardiya) {
+            if ($vardiya['personel_id'] === $personelId && $vardiya['tarih'] === $date->format('Y-m-d')) {
+                throw new Exception('Seçilen tarih aralığında vardiya bulunuyor. Önce vardiyaları düzenlemelisiniz.');
+            }
+        }
+    }
+
+    // Çakışan izin kontrolü
+    foreach ($data['izinler'] as $izin) {
+        if ($izin['personel_id'] === $personelId) {
+            $izinBaslangic = strtotime($izin['baslangic_tarihi']);
+            $izinBitis = strtotime($izin['bitis_tarihi']);
+            $yeniBaslangic = strtotime($baslangicTarihi);
+            $yeniBitis = strtotime($bitisTarihi);
+
+            if (($yeniBaslangic >= $izinBaslangic && $yeniBaslangic <= $izinBitis) ||
+                ($yeniBitis >= $izinBaslangic && $yeniBitis <= $izinBitis)
+            ) {
+                throw new Exception('Seçilen tarih aralığında başka bir izin bulunuyor.');
+            }
+        }
+    }
+
+    // Yıllık izin hakkı kontrolü
+    if ($izinTuru === 'yillik') {
+        $kalanIzin = yillikIzinHakkiHesapla($personelId);
+        $izinGunSayisi = (strtotime($bitisTarihi) - strtotime($baslangicTarihi)) / (60 * 60 * 24) + 1;
+        if ($izinGunSayisi > $kalanIzin) {
+            throw new Exception('Yeterli yıllık izin hakkınız bulunmuyor. Kalan izin: ' . $kalanIzin . ' gün');
+        }
+    }
+
+    $yeniTalep = [
+        'id' => uniqid(),
+        'personel_id' => $personelId,
+        'baslangic_tarihi' => $baslangicTarihi,
+        'bitis_tarihi' => $bitisTarihi,
+        'izin_turu' => $izinTuru, // yillik, hastalik, idari
+        'aciklama' => $aciklama,
+        'durum' => 'beklemede', // beklemede, onaylandi, reddedildi
+        'olusturma_tarihi' => date('Y-m-d H:i:s')
+    ];
+
+    $data['izin_talepleri'][] = $yeniTalep;
+    veriYaz($data);
+
+    return $yeniTalep['id'];
+}
+
+// İzin talebini onayla/reddet
+function izinTalebiGuncelle($talepId, $durum, $yoneticiNotu = '')
+{
+    $data = veriOku();
+    foreach ($data['izin_talepleri'] as $key => $talep) {
+        if ($talep['id'] === $talepId) {
+            $data['izin_talepleri'][$key]['durum'] = $durum;
+            $data['izin_talepleri'][$key]['yonetici_notu'] = $yoneticiNotu;
+            $data['izin_talepleri'][$key]['guncelleme_tarihi'] = date('Y-m-d H:i:s');
+
+            // Eğer onaylandıysa izinler listesine ekle
+            if ($durum === 'onaylandi') {
+                $yeniIzin = [
+                    'id' => uniqid(),
+                    'personel_id' => $talep['personel_id'],
+                    'baslangic_tarihi' => $talep['baslangic_tarihi'],
+                    'bitis_tarihi' => $talep['bitis_tarihi'],
+                    'izin_turu' => $talep['izin_turu'],
+                    'aciklama' => $talep['aciklama']
+                ];
+                $data['izinler'][] = $yeniIzin;
+            }
+            break;
+        }
+    }
+    veriYaz($data);
+}
+
+// Personelin izinlerini getir
+function personelIzinleriniGetir($personelId)
+{
+    $data = veriOku();
+    $izinler = [];
+
+    foreach ($data['izinler'] as $izin) {
+        if ($izin['personel_id'] === $personelId) {
+            $izinler[] = $izin;
+        }
+    }
+
+    return $izinler;
+}
+
+// Personelin izin taleplerini getir
+function personelIzinTalepleriniGetir($personelId)
+{
+    $data = veriOku();
+    $talepler = [];
+
+    foreach ($data['izin_talepleri'] as $talep) {
+        if ($talep['personel_id'] === $personelId) {
+            $talepler[] = $talep;
+        }
+    }
+
+    return $talepler;
+}
+
+// Yıllık izin hakkı hesapla
+function yillikIzinHakkiHesapla($personelId)
+{
+    $yillikIzinHakki = 14; // Varsayılan yıllık izin hakkı
+
+    // Kullanılan izinleri hesapla
+    $data = veriOku();
+    $kullanilanIzin = 0;
+
+    foreach ($data['izinler'] as $izin) {
+        if ($izin['personel_id'] === $personelId && $izin['izin_turu'] === 'yillik') {
+            $baslangic = new DateTime($izin['baslangic_tarihi']);
+            $bitis = new DateTime($izin['bitis_tarihi']);
+            $fark = $bitis->diff($baslangic);
+            $kullanilanIzin += $fark->days + 1;
+        }
+    }
+
+    // Bekleyen izin taleplerini de hesaba kat
+    foreach ($data['izin_talepleri'] as $talep) {
+        if (
+            $talep['personel_id'] === $personelId &&
+            $talep['izin_turu'] === 'yillik' &&
+            $talep['durum'] === 'beklemede'
+        ) {
+            $baslangic = new DateTime($talep['baslangic_tarihi']);
+            $bitis = new DateTime($talep['bitis_tarihi']);
+            $fark = $bitis->diff($baslangic);
+            $kullanilanIzin += $fark->days + 1;
+        }
+    }
+
+    return $yillikIzinHakki - $kullanilanIzin;
+}
+
+// İzin türlerini getir
+function izinTurleriniGetir()
+{
+    return [
+        'yillik' => 'Yıllık İzin',
+        'hastalik' => 'Hastalık İzni',
+        'idari' => 'İdari İzin'
+    ];
 }

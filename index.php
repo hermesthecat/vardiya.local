@@ -38,7 +38,10 @@
     <div class="container">
         <div class="header-nav">
             <h1>Personel Vardiya Sistemi</h1>
-            <a href="personel.php" class="nav-btn">Personel Yönetimi</a>
+            <div>
+                <a href="personel.php" class="nav-btn">Personel Yönetimi</a>
+                <a href="izin.php" class="nav-btn">İzin Yönetimi</a>
+            </div>
         </div>
 
         <?php if ($hata): ?>
