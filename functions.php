@@ -913,8 +913,11 @@ function kullaniciGiris($email, $sifre)
         // Kullanıcı arama ve doğrulama
         foreach ($data['personel'] as $personel) {
             if ($personel['email'] === $email) {
-                // Şifre kontrolü - Eğer şifre hash'lenmemişse direkt karşılaştır
-                // TODO: Şifreleri hash'lemeyi unutma!
+                // Şifre kontrolü
+                if (!isset($personel['sifre'])) {
+                    throw new Exception('Kullanıcı şifresi tanımlanmamış.');
+                }
+
                 if ($sifre === $personel['sifre']) {
                     // Varolan session'ı temizle
                     if (session_status() === PHP_SESSION_ACTIVE) {

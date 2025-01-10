@@ -7,6 +7,7 @@
       "yetki": "admin",
       "email": "ahmet@firma.com",
       "telefon": "5551234567",
+      "sifre": "123456",
       "tercihler": {
         "bildirimler": true,
         "tercih_edilen_vardiyalar": ["sabah", "aksam"],
@@ -36,6 +37,7 @@
       "yetki": "personel",
       "email": "ayse@firma.com",
       "telefon": "5551234568",
+      "sifre": "123456",
       "tercihler": {
         "bildirimler": true,
         "tercih_edilen_vardiyalar": ["sabah"],
@@ -49,6 +51,7 @@
       "yetki": "personel",
       "email": "mehmet@firma.com",
       "telefon": "5551234569",
+      "sifre": "123456",
       "tercihler": {
         "bildirimler": true,
         "tercih_edilen_vardiyalar": ["gece"],
@@ -62,6 +65,7 @@
       "yetki": "personel",
       "email": "fatma@firma.com",
       "telefon": "5551234570",
+      "sifre": "123456",
       "tercihler": {
         "bildirimler": true,
         "tercih_edilen_vardiyalar": ["sabah", "aksam"],
