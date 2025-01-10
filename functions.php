@@ -16,6 +16,48 @@ function veriYaz($data)
     file_put_contents('personel.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
 
+// Ardışık çalışma günlerini kontrol et
+function ardisikCalismaGunleriniKontrolEt($personelId, $tarih)
+{
+    $data = veriOku();
+    $kontrolTarihi = strtotime($tarih);
+    $ardisikGunler = 0;
+
+    // Seçilen tarihten geriye doğru 6 günü kontrol et
+    for ($i = 0; $i < 6; $i++) {
+        $kontrolEdilecekTarih = date('Y-m-d', strtotime("-$i day", $kontrolTarihi));
+
+        foreach ($data['vardiyalar'] as $vardiya) {
+            if ($vardiya['personel_id'] === $personelId && $vardiya['tarih'] === $kontrolEdilecekTarih) {
+                $ardisikGunler++;
+                break;
+            }
+        }
+    }
+
+    // Eğer 6 gün üst üste çalışmışsa, 7. gün çalışamaz
+    if ($ardisikGunler >= 6) {
+        return false;
+    }
+
+    // Seçilen tarihten sonraki günleri de kontrol et
+    for ($i = 1; $i < 6; $i++) {
+        $kontrolEdilecekTarih = date('Y-m-d', strtotime("+$i day", $kontrolTarihi));
+
+        foreach ($data['vardiyalar'] as $vardiya) {
+            if ($vardiya['personel_id'] === $personelId && $vardiya['tarih'] === $kontrolEdilecekTarih) {
+                $ardisikGunler++;
+                if ($ardisikGunler >= 6) {
+                    return false;
+                }
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
 // Yeni personel ekleme
 function personelEkle($ad, $soyad)
 {
@@ -32,6 +74,11 @@ function personelEkle($ad, $soyad)
 // Vardiya ekleme
 function vardiyaEkle($personelId, $tarih, $vardiyaTuru)
 {
+    // Ardışık çalışma günü kontrolü
+    if (!ardisikCalismaGunleriniKontrolEt($personelId, $tarih)) {
+        throw new Exception('Bu personel 6 gün üst üste çalıştığı için bu tarihe vardiya eklenemez. En az 1 gün izin kullanması gerekiyor.');
+    }
+
     $data = veriOku();
     $yeniVardiya = [
         'id' => uniqid(),

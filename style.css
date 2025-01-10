@@ -251,3 +251,24 @@ input[type="radio"]:checked + .vardiya-btn.gece {
   font-size: 16px;
   margin-top: 10px;
 }
+
+/* Mesaj Stilleri */
+.hata-mesaji,
+.basari-mesaji {
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.hata-mesaji {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.basari-mesaji {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}

@@ -12,12 +12,21 @@
     <?php
     require_once 'functions.php';
 
+    $hata = '';
+    $basari = '';
+
     // POST işlemleri
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['yeni_personel'])) {
             personelEkle($_POST['ad'], $_POST['soyad']);
+            $basari = 'Personel başarıyla eklendi.';
         } elseif (isset($_POST['vardiya_ekle'])) {
-            vardiyaEkle($_POST['personel_id'], $_POST['tarih'], $_POST['vardiya_turu']);
+            try {
+                vardiyaEkle($_POST['personel_id'], $_POST['tarih'], $_POST['vardiya_turu']);
+                $basari = 'Vardiya başarıyla eklendi.';
+            } catch (Exception $e) {
+                $hata = $e->getMessage();
+            }
         }
     }
 
@@ -28,6 +37,18 @@
 
     <div class="container">
         <h1>Personel Vardiya Sistemi</h1>
+
+        <?php if ($hata): ?>
+            <div class="hata-mesaji">
+                <?php echo htmlspecialchars($hata); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($basari): ?>
+            <div class="basari-mesaji">
+                <?php echo htmlspecialchars($basari); ?>
+            </div>
+        <?php endif; ?>
 
         <!-- Takvim Navigasyonu -->
         <div class="takvim-nav">
@@ -107,6 +128,7 @@
             var modal = document.getElementById('vardiyaModal');
             var span = document.getElementsByClassName('close')[0];
             var seciliTarihInput = document.getElementById('seciliTarih');
+            var vardiyaForm = document.getElementById('vardiyaForm');
 
             // Takvim hücrelerine tıklama olayı ekle
             document.querySelectorAll('.gun').forEach(function(gun) {
@@ -115,6 +137,11 @@
                     if (tarih) {
                         seciliTarihInput.value = tarih;
                         modal.style.display = 'block';
+                        // Form resetle
+                        vardiyaForm.reset();
+                        document.querySelectorAll('.vardiya-btn').forEach(function(btn) {
+                            btn.classList.remove('active');
+                        });
                     }
                 });
             });
