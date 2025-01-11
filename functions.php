@@ -1903,8 +1903,12 @@ function vardiyaTurleriniGetir()
         if (isset($vardiya['baslangic']) && !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic'])) {
             throw new Exception('Geçersiz başlangıç saati formatı: ' . $vardiya['baslangic']);
         }
-        if (isset($vardiya['bitis']) && !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['bitis'])) {
-            throw new Exception('Geçersiz bitiş saati formatı: ' . $vardiya['bitis']);
+        if (isset($vardiya['bitis'])) {
+            if ($vardiya['bitis'] === '24:00') {
+                $vardiya['bitis'] = '00:00';
+            } elseif (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['bitis'])) {
+                throw new Exception('Geçersiz bitiş saati formatı: ' . $vardiya['bitis']);
+            }
         }
 
         // Gece vardiyası kontrolü
