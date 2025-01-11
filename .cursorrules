@@ -3,4 +3,6 @@
 - Kodların okunabilirliği ve anlamlılığı sağlanacak.
 - Kodların performansı optimize edilecek.
 - Kodların güvenliği sağlanacak.
+- tarih ile ilgili işlemlerde her zaman timestamp kullanılacak.
+- tarihi önyüzde göstermen gereken durumlarda date() ile türkçe formatta (DD.MM.YYYY) kullan.
 
