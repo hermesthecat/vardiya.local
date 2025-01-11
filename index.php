@@ -192,8 +192,15 @@
                 <span class="current-month">
                     <i class="fas fa-calendar-alt"></i>
                     <?php
-                    setlocale(LC_TIME, 'tr_TR.UTF-8');
-                    echo strftime('%B %Y', mktime(0, 0, 0, $ay, 1, $yil));
+                    $formatter = new IntlDateFormatter(
+                        'tr_TR.UTF-8',
+                        IntlDateFormatter::LONG,
+                        IntlDateFormatter::NONE,
+                        'Europe/Istanbul',
+                        IntlDateFormatter::GREGORIAN,
+                        'LLLL Y'
+                    );
+                    echo ucfirst($formatter->format(mktime(0, 0, 0, $ay, 1, $yil)));
                     ?>
                 </span>
                 <a href="?ay=<?php echo $sonrakiAy; ?>&yil=<?php echo $sonrakiYil; ?>" class="btn-small">
