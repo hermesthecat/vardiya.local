@@ -175,7 +175,7 @@
             <form method="POST" class="form-section">
                 <input type="hidden" name="islem" value="tercih_guncelle">
 
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label class="checkbox-label">
                         <input type="checkbox" name="bildirimler" value="1"
                             <?php echo $kullanici['tercihler']['bildirimler'] ? 'checked' : ''; ?>>
@@ -217,7 +217,9 @@
                     </select>
                 </div>
 
-                <button type="submit" class="submit-btn">Tercihleri Güncelle</button>
+                <div class="form-group full-width">
+                    <button type="submit" class="submit-btn">Tercihleri Güncelle</button>
+                </div>
             </form>
         </div>
 
