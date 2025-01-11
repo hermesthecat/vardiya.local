@@ -255,111 +255,161 @@
 
         <!-- Takvim -->
         <div class="section">
-            <h2>Vardiya Takvimi</h2>
-            <?php echo takvimOlustur($ay, $yil); ?>
+            <div class="takvim-tablo">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pazartesi</th>
+                            <th>Salı</th>
+                            <th>Çarşamba</th>
+                            <th>Perşembe</th>
+                            <th>Cuma</th>
+                            <th>Cumartesi</th>
+                            <th>Pazar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php echo takvimOlustur($ay, $yil); ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Vardiya Ekleme Modal -->
+    <!-- Vardiya Ekleme Modalı -->
     <div id="vardiyaModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Vardiya Ekle</h2>
+            <h2><i class="fas fa-calendar-plus"></i> Vardiya Ekle</h2>
+            
+            <div id="modalMessage" style="display: none; margin-bottom: 15px;"></div>
 
             <!-- Akıllı Vardiya Önerileri -->
             <div id="vardiyaOnerileri" class="oneri-section" style="display: none;">
-                <h3>Önerilen Personeller</h3>
+                <h3><i class="fas fa-lightbulb"></i> Önerilen Personeller</h3>
                 <div class="oneri-liste"></div>
             </div>
+            
+            <form id="vardiyaEkleForm" method="POST" class="form-section">
+                <input type="hidden" name="islem" value="vardiya_ekle">
+                <input type="hidden" name="tarih" id="modalTarih">
 
-            <form method="POST" id="vardiyaForm">
-                <input type="hidden" name="tarih" id="seciliTarih">
                 <div class="form-group">
-                    <label>Personel:</label>
+                    <label><i class="fas fa-user"></i> Personel:</label>
                     <select name="personel_id" id="personelSelect" required>
                         <?php echo personelListesiGetir(); ?>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label>Vardiya:</label>
-                    <div class="vardiya-butonlar">
+                    <label><i class="fas fa-clock"></i> Vardiya Türü:</label>
+                    <select name="vardiya_turu" id="vardiyaTuruSelect" required>
                         <?php
+                        $vardiyaTurleri = vardiyaTurleriniGetir();
                         foreach ($vardiyaTurleri as $id => $vardiya) {
-                            echo '<label>
-                                <input type="radio" name="vardiya_turu" value="' . htmlspecialchars($id) . '" required>
-                                <span class="vardiya-btn ' . htmlspecialchars($id) . '">' .
+                            echo '<option value="' . htmlspecialchars($id) . '">' .
                                 htmlspecialchars($vardiya['etiket']) . ' (' .
                                 htmlspecialchars($vardiya['baslangic']) . '-' .
-                                htmlspecialchars($vardiya['bitis']) . ')</span>
-                            </label>';
+                                htmlspecialchars($vardiya['bitis']) . ')</option>';
                         }
                         ?>
-                    </div>
+                    </select>
                 </div>
-                <button type="submit" name="vardiya_ekle" class="submit-btn">Vardiya Ekle</button>
+
+                <div class="form-group">
+                    <label><i class="fas fa-sticky-note"></i> Notlar:</label>
+                    <textarea name="notlar" placeholder="Vardiya ile ilgili notları buraya yazabilirsiniz..."></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-save"></i> Vardiya Ekle
+                </button>
             </form>
         </div>
     </div>
 
     <script>
+        // Modal ve form işlemleri
         document.addEventListener('DOMContentLoaded', function() {
-            var modal = document.getElementById('vardiyaModal');
-            var span = document.getElementsByClassName('close')[0];
-            var seciliTarihInput = document.getElementById('seciliTarih');
-            var vardiyaForm = document.getElementById('vardiyaForm');
-            var personelSelect = document.getElementById('personelSelect');
-            var vardiyaOnerileri = document.getElementById('vardiyaOnerileri');
-            var oneriListe = vardiyaOnerileri.querySelector('.oneri-liste');
+            const modal = document.getElementById('vardiyaModal');
+            const span = document.getElementsByClassName('close')[0];
+            const form = document.getElementById('vardiyaEkleForm');
+            const modalTarih = document.getElementById('modalTarih');
+            const modalMessage = document.getElementById('modalMessage');
+            const vardiyaOnerileri = document.getElementById('vardiyaOnerileri');
+            const oneriListe = vardiyaOnerileri.querySelector('.oneri-liste');
+            const personelSelect = document.getElementById('personelSelect');
+            const vardiyaTuruSelect = document.getElementById('vardiyaTuruSelect');
 
-            // Takvim hücrelerine tıklama olayı ekle
-            document.querySelectorAll('.gun').forEach(function(gun) {
-                gun.addEventListener('click', function() {
-                    var tarih = this.getAttribute('data-tarih');
-                    if (tarih) {
-                        seciliTarihInput.value = tarih;
-                        modal.style.display = 'block';
-                        // Form resetle
-                        vardiyaForm.reset();
-                        document.querySelectorAll('.vardiya-btn').forEach(function(btn) {
-                            btn.classList.remove('active');
-                        });
-                    }
-                });
-            });
+            // Mesaj gösterme fonksiyonu
+            function showMessage(message, isError = false) {
+                modalMessage.textContent = message;
+                modalMessage.style.display = 'block';
+                modalMessage.className = isError ? 'hata-mesaji' : 'basari-mesaji';
+            }
 
-            // Vardiya türü seçildiğinde önerileri getir
-            document.querySelectorAll('input[name="vardiya_turu"]').forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    if (seciliTarihInput.value && this.value) {
-                        // AJAX ile önerileri getir
-                        fetch('get_oneriler.php?tarih=' + seciliTarihInput.value + '&vardiya_turu=' + this.value)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.length > 0) {
-                                    oneriListe.innerHTML = '';
-                                    data.forEach(function(oneri) {
-                                        var div = document.createElement('div');
-                                        div.className = 'oneri-item';
-                                        div.innerHTML = `
-                                            <span>${oneri.ad_soyad}</span>
+            // Vardiya önerilerini getir
+            function getVardiyaOnerileri() {
+                const tarih = modalTarih.value;
+                const vardiyaTuru = vardiyaTuruSelect.value;
+
+                if (tarih && vardiyaTuru) {
+                    fetch('get_oneriler.php?tarih=' + tarih + '&vardiya_turu=' + vardiyaTuru)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.length > 0) {
+                                oneriListe.innerHTML = '';
+                                data.forEach(oneri => {
+                                    const div = document.createElement('div');
+                                    div.className = 'oneri-item';
+                                    div.innerHTML = `
+                                        <div class="oneri-info">
+                                            <span class="oneri-ad">${oneri.ad_soyad}</span>
                                             <span class="oneri-puan">Uygunluk: %${Math.round(oneri.puan)}</span>
-                                            <button type="button" class="oneri-sec" data-personel-id="${oneri.personel_id}">Seç</button>
-                                        `;
-                                        oneriListe.appendChild(div);
-                                    });
-                                    vardiyaOnerileri.style.display = 'block';
+                                        </div>
+                                        <button type="button" class="oneri-sec" data-personel-id="${oneri.personel_id}">
+                                            <i class="fas fa-check"></i> Seç
+                                        </button>
+                                    `;
+                                    oneriListe.appendChild(div);
+                                });
+                                vardiyaOnerileri.style.display = 'block';
 
-                                    // Öneri seçme butonlarına tıklama olayı ekle
-                                    document.querySelectorAll('.oneri-sec').forEach(function(btn) {
-                                        btn.addEventListener('click', function() {
-                                            var personelId = this.getAttribute('data-personel-id');
-                                            personelSelect.value = personelId;
-                                        });
+                                // Öneri seçme butonlarına tıklama olayı
+                                document.querySelectorAll('.oneri-sec').forEach(btn => {
+                                    btn.addEventListener('click', function() {
+                                        const personelId = this.getAttribute('data-personel-id');
+                                        personelSelect.value = personelId;
+                                        vardiyaOnerileri.style.display = 'none';
                                     });
-                                } else {
-                                    vardiyaOnerileri.style.display = 'none';
-                                }
-                            });
+                                });
+                            } else {
+                                vardiyaOnerileri.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Öneri getirme hatası:', error);
+                            vardiyaOnerileri.style.display = 'none';
+                        });
+                }
+            }
+
+            // Vardiya türü değiştiğinde önerileri güncelle
+            vardiyaTuruSelect.addEventListener('change', getVardiyaOnerileri);
+
+            // Takvim hücrelerine tıklama olayı
+            document.querySelectorAll('.gun').forEach(gun => {
+                gun.addEventListener('click', function() {
+                    if (this.dataset.tarih) {
+                        modalTarih.value = this.dataset.tarih;
+                        modalMessage.style.display = 'none';
+                        vardiyaOnerileri.style.display = 'none';
+                        form.reset();
+                        modal.style.display = 'block';
+                        // Önerileri getir
+                        if (vardiyaTuruSelect.value) {
+                            getVardiyaOnerileri();
+                        }
                     }
                 });
             });
@@ -375,13 +425,38 @@
                 }
             }
 
-            // Vardiya butonları için tıklama olayı
-            document.querySelectorAll('.vardiya-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.vardiya-btn').forEach(function(b) {
-                        b.classList.remove('active');
-                    });
-                    this.classList.add('active');
+            // Form gönderme olayı
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                fetch('index.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    if (data.includes('basari-mesaji')) {
+                        showMessage('Vardiya başarıyla eklendi!');
+                        setTimeout(() => {
+                            modal.style.display = 'none';
+                            location.reload();
+                        }, 1500);
+                    } else if (data.includes('hata-mesaji')) {
+                        const errorMatch = data.match(/<div class="hata-mesaji">(.*?)<\/div>/);
+                        if (errorMatch) {
+                            showMessage(errorMatch[1], true);
+                        } else {
+                            showMessage('Vardiya eklenirken bir hata oluştu.', true);
+                        }
+                    } else {
+                        showMessage('Vardiya eklenirken bir hata oluştu.', true);
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    showMessage('Vardiya eklenirken bir hata oluştu.', true);
                 });
             });
         });

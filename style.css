@@ -203,13 +203,26 @@ button:hover {
 }
 
 .vardiya-item {
-  background-color: #4caf50;
-  color: white;
-  padding: 2px 5px;
+  display: block;
+  font-size: 11px;
+  padding: 2px 4px;
+  margin: 2px 0;
   border-radius: 3px;
-  font-size: 12px;
-  cursor: pointer;
-  text-align: center;
+  background-color: #f0f0f0;
+  color: #333;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.vardiya-item:hover {
+  background-color: #e0e0e0;
+  max-width: none;
+  position: absolute;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .vardiya-item[title]:hover::after {
@@ -493,16 +506,24 @@ textarea {
 
 /* Öneri Stilleri */
 .oneri-section {
-  margin-bottom: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
   padding: 15px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
 }
 
 .oneri-section h3 {
-  margin: 0 0 10px 0;
+  color: #2c3e50;
   font-size: 16px;
-  color: #333;
+  margin: 0 0 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oneri-section h3 i {
+  color: #f1c40f;
 }
 
 .oneri-liste {
@@ -515,28 +536,59 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  background-color: white;
-  border-radius: 4px;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.oneri-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.oneri-ad {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
 .oneri-puan {
-  color: #666;
-  font-size: 14px;
+  font-size: 13px;
+  color: #7f8c8d;
 }
 
 .oneri-sec {
-  padding: 5px 10px;
-  background-color: #4caf50;
+  background: #4caf50;
   color: white;
   border: none;
-  border-radius: 3px;
+  padding: 8px 16px;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
 }
 
 .oneri-sec:hover {
-  background-color: #45a049;
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+/* Responsive düzenlemeler */
+@media (max-width: 768px) {
+  .oneri-item {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .oneri-sec {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Checkbox Grup Stilleri */

@@ -137,6 +137,54 @@
             "vardiya_turu": "sabah",
             "notlar": "",
             "durum": "onaylandi"
+        },
+        {
+            "id": "678250cb53ded",
+            "personel_id": "64f1a2b3c4d5",
+            "tarih": 1736974800,
+            "vardiya_turu": "sabah",
+            "notlar": "",
+            "durum": "onaylandi"
+        },
+        {
+            "id": "678250d0a52bf",
+            "personel_id": "64f1a2b3c4d5",
+            "tarih": 1737061200,
+            "vardiya_turu": "sabah",
+            "notlar": "",
+            "durum": "onaylandi"
+        },
+        {
+            "id": "678250d4f1825",
+            "personel_id": "64f1a2b3c4d5",
+            "tarih": 1737147600,
+            "vardiya_turu": "sabah",
+            "notlar": "",
+            "durum": "onaylandi"
+        },
+        {
+            "id": "678250da2a7c3",
+            "personel_id": "64f1a2b3c4d5",
+            "tarih": 1737234000,
+            "vardiya_turu": "sabah",
+            "notlar": "",
+            "durum": "onaylandi"
+        },
+        {
+            "id": "678250df0ba85",
+            "personel_id": "64f1a2b3c4d5",
+            "tarih": 1737320400,
+            "vardiya_turu": "sabah",
+            "notlar": "",
+            "durum": "onaylandi"
+        },
+        {
+            "id": "678250e75e892",
+            "personel_id": "64f1a2b3c4d5",
+            "tarih": 1737406800,
+            "vardiya_turu": "sabah",
+            "notlar": "",
+            "durum": "onaylandi"
         }
     ],
     "izinler": [
@@ -325,6 +373,66 @@
             "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-15",
             "ip_adresi": "127.0.0.1",
             "tarih": 1736592832,
+            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
+        },
+        {
+            "id": "678250cb56b62",
+            "kullanici_id": "64f1a2b3c4d5",
+            "kullanici_rol": "admin",
+            "islem_turu": "vardiya_ekle",
+            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-16",
+            "ip_adresi": "127.0.0.1",
+            "tarih": 1736593611,
+            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
+        },
+        {
+            "id": "678250d0a8136",
+            "kullanici_id": "64f1a2b3c4d5",
+            "kullanici_rol": "admin",
+            "islem_turu": "vardiya_ekle",
+            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-17",
+            "ip_adresi": "127.0.0.1",
+            "tarih": 1736593616,
+            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
+        },
+        {
+            "id": "678250d5001bd",
+            "kullanici_id": "64f1a2b3c4d5",
+            "kullanici_rol": "admin",
+            "islem_turu": "vardiya_ekle",
+            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-18",
+            "ip_adresi": "127.0.0.1",
+            "tarih": 1736593621,
+            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
+        },
+        {
+            "id": "678250da2d44f",
+            "kullanici_id": "64f1a2b3c4d5",
+            "kullanici_rol": "admin",
+            "islem_turu": "vardiya_ekle",
+            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-19",
+            "ip_adresi": "127.0.0.1",
+            "tarih": 1736593626,
+            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
+        },
+        {
+            "id": "678250df0e771",
+            "kullanici_id": "64f1a2b3c4d5",
+            "kullanici_rol": "admin",
+            "islem_turu": "vardiya_ekle",
+            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-20",
+            "ip_adresi": "127.0.0.1",
+            "tarih": 1736593631,
+            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
+        },
+        {
+            "id": "678250e761505",
+            "kullanici_id": "64f1a2b3c4d5",
+            "kullanici_rol": "admin",
+            "islem_turu": "vardiya_ekle",
+            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-21",
+            "ip_adresi": "127.0.0.1",
+            "tarih": 1736593639,
             "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
         }
     ]
