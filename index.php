@@ -146,6 +146,56 @@
             <div class="basari-mesaji"><?php echo htmlspecialchars($basari); ?></div>
         <?php endif; ?>
 
+        <!-- Vardiya Ekleme Formu (Sadece yönetici ve admin için) -->
+        <?php if (in_array($_SESSION['rol'], ['yonetici', 'admin'])): ?>
+            <div class="section">
+                <button type="button" class="toggle-form-btn" onclick="toggleForm()">
+                    <i class="fas fa-chevron-down"></i>
+                    Yeni Vardiya Ekle
+                </button>
+
+                <div class="form-section">
+                    <form method="POST" class="form-section">
+                        <input type="hidden" name="islem" value="vardiya_ekle">
+
+                        <div class="form-group">
+                            <label>Personel:</label>
+                            <select name="personel_id" required>
+                                <?php echo personelListesiGetir(); ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tarih:</label>
+                            <input type="date" name="tarih" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Vardiya Türü:</label>
+                            <select name="vardiya_turu" required>
+                                <?php
+                                $vardiyaTurleri = vardiyaTurleriniGetir();
+                                foreach ($vardiyaTurleri as $id => $vardiya) {
+                                    echo '<option value="' . htmlspecialchars($id) . '">' .
+                                        htmlspecialchars($vardiya['etiket']) . ' (' .
+                                        htmlspecialchars($vardiya['baslangic']) . '-' .
+                                        htmlspecialchars($vardiya['bitis']) . ')</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Notlar:</label>
+                            <textarea name="notlar"></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">Vardiya Ekle</button>
+                    </form>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- Ay Seçimi -->
         <div class="section">
             <div class="ay-secimi">
@@ -187,50 +237,6 @@
             </div>
         </div>
 
-        <!-- Vardiya Ekleme Formu (Sadece yönetici ve admin için) -->
-        <?php if (in_array($_SESSION['rol'], ['yonetici', 'admin'])): ?>
-            <div class="section">
-                <h2>Yeni Vardiya Ekle</h2>
-                <form method="POST" class="form-section">
-                    <input type="hidden" name="islem" value="vardiya_ekle">
-
-                    <div class="form-group">
-                        <label>Personel:</label>
-                        <select name="personel_id" required>
-                            <?php echo personelListesiGetir(); ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Tarih:</label>
-                        <input type="date" name="tarih" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Vardiya Türü:</label>
-                        <select name="vardiya_turu" required>
-                            <?php
-                            $vardiyaTurleri = vardiyaTurleriniGetir();
-                            foreach ($vardiyaTurleri as $id => $vardiya) {
-                                echo '<option value="' . htmlspecialchars($id) . '">' .
-                                    htmlspecialchars($vardiya['etiket']) . ' (' .
-                                    htmlspecialchars($vardiya['baslangic']) . '-' .
-                                    htmlspecialchars($vardiya['bitis']) . ')</option>';
-                            }
-                            ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Notlar:</label>
-                        <textarea name="notlar"></textarea>
-                    </div>
-
-                    <button type="submit" class="submit-btn">Vardiya Ekle</button>
-                </form>
-            </div>
-        <?php endif; ?>
-
         <!-- Takvim -->
         <div class="section">
             <div class="takvim-tablo">
@@ -259,7 +265,7 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2><i class="fas fa-calendar-plus"></i> Vardiya Ekle</h2>
-            
+
             <div id="modalMessage" style="display: none; margin-bottom: 15px;"></div>
 
             <!-- Akıllı Vardiya Önerileri -->
@@ -267,7 +273,7 @@
                 <h3><i class="fas fa-lightbulb"></i> Önerilen Personeller</h3>
                 <div class="oneri-liste"></div>
             </div>
-            
+
             <form id="vardiyaEkleForm" method="POST" class="form-section">
                 <input type="hidden" name="islem" value="vardiya_ekle">
                 <input type="hidden" name="tarih" id="modalTarih">
@@ -406,36 +412,36 @@
             // Form gönderme olayı
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 const formData = new FormData(this);
-                
+
                 fetch('index.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.text())
-                .then(data => {
-                    if (data.includes('basari-mesaji')) {
-                        showMessage('Vardiya başarıyla eklendi!');
-                        setTimeout(() => {
-                            modal.style.display = 'none';
-                            location.reload();
-                        }, 1500);
-                    } else if (data.includes('hata-mesaji')) {
-                        const errorMatch = data.match(/<div class="hata-mesaji">(.*?)<\/div>/);
-                        if (errorMatch) {
-                            showMessage(errorMatch[1], true);
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        if (data.includes('basari-mesaji')) {
+                            showMessage('Vardiya başarıyla eklendi!');
+                            setTimeout(() => {
+                                modal.style.display = 'none';
+                                location.reload();
+                            }, 1500);
+                        } else if (data.includes('hata-mesaji')) {
+                            const errorMatch = data.match(/<div class="hata-mesaji">(.*?)<\/div>/);
+                            if (errorMatch) {
+                                showMessage(errorMatch[1], true);
+                            } else {
+                                showMessage('Vardiya eklenirken bir hata oluştu.', true);
+                            }
                         } else {
                             showMessage('Vardiya eklenirken bir hata oluştu.', true);
                         }
-                    } else {
+                    })
+                    .catch(error => {
+                        console.error('Hata:', error);
                         showMessage('Vardiya eklenirken bir hata oluştu.', true);
-                    }
-                })
-                .catch(error => {
-                    console.error('Hata:', error);
-                    showMessage('Vardiya eklenirken bir hata oluştu.', true);
-                });
+                    });
             });
         });
     </script>
@@ -470,6 +476,15 @@
                 });
             });
         });
+    </script>
+
+    <script>
+        function toggleForm() {
+            const btn = document.querySelector('.toggle-form-btn');
+            const form = document.querySelector('.form-section');
+            btn.classList.toggle('active');
+            form.classList.toggle('active');
+        }
     </script>
 </body>
 

@@ -1567,3 +1567,53 @@ tr:hover {
         display: none;
     }
 }
+
+.toggle-form-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 20px auto;
+    transition: all 0.3s ease;
+}
+
+.toggle-form-btn:hover {
+    background: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.toggle-form-btn i {
+    transition: transform 0.3s ease;
+}
+
+.toggle-form-btn.active i {
+    transform: rotate(180deg);
+}
+
+.form-section {
+    display: none;
+}
+
+.form-section.active {
+    display: grid;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
