@@ -1215,7 +1215,7 @@ function personelAylikVardiyaSayisi($personelId, $ay, $yil)
             if ($izin['personel_id'] === $personelId) {
                 $izinBaslangic = is_numeric($izin['baslangic_tarihi']) ? $izin['baslangic_tarihi'] : strtotime($izin['baslangic_tarihi']);
                 $izinBitis = is_numeric($izin['bitis_tarihi']) ? $izin['bitis_tarihi'] : strtotime($izin['bitis_tarihi']);
-                
+
                 if ($izinBaslangic <= $bitisTimestamp && $izinBitis >= $baslangicTimestamp) {
                     for ($t = max($izinBaslangic, $baslangicTimestamp); $t <= min($izinBitis, $bitisTimestamp); $t = strtotime('+1 day', $t)) {
                         $izinliGunler[date('Y-m-d', $t)] = true;
@@ -1254,7 +1254,7 @@ function personelAylikVardiyaSayisi($personelId, $ay, $yil)
                     $vardiyaSaatleri = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
                     $vardiyaSayilari['vardiyalar'][$vardiya['vardiya_turu']]['saat'] += $vardiyaSaatleri['sure'];
                     $vardiyaSayilari['toplam_saat'] += $vardiyaSaatleri['sure'];
-                    
+
                     if ($vardiyaSaatleri['gece_vardiyasi']) {
                         $vardiyaSayilari['toplam_gece_vardiyasi']++;
                     }
@@ -1269,8 +1269,8 @@ function personelAylikVardiyaSayisi($personelId, $ay, $yil)
     }
 
     // Ek istatistikler
-    $vardiyaSayilari['ortalama_gunluk_saat'] = $vardiyaSayilari['toplam'] > 0 
-        ? round($vardiyaSayilari['toplam_saat'] / $vardiyaSayilari['toplam'], 2) 
+    $vardiyaSayilari['ortalama_gunluk_saat'] = $vardiyaSayilari['toplam'] > 0
+        ? round($vardiyaSayilari['toplam_saat'] / $vardiyaSayilari['toplam'], 2)
         : 0;
 
     $vardiyaSayilari['calisilan_gun_sayisi'] = $vardiyaSayilari['toplam'];
@@ -1900,8 +1900,12 @@ function vardiyaTurleriniGetir()
         ];
 
         // Saat formatı kontrolü
-        if (isset($vardiya['baslangic']) && !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic'])) {
-            throw new Exception('Geçersiz başlangıç saati formatı: ' . $vardiya['baslangic']);
+        if (isset($vardiya['baslangic'])) {
+            if ($vardiya['baslangic'] === '24:00') {
+                $vardiya['baslangic'] = '00:00';
+            } elseif (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $vardiya['baslangic'])) {
+                throw new Exception('Geçersiz başlangıç saati formatı: ' . $vardiya['baslangic']);
+            }
         }
         if (isset($vardiya['bitis'])) {
             if ($vardiya['bitis'] === '24:00') {
@@ -1988,10 +1992,10 @@ function vardiyaCakismasiDetayliKontrol($personelId, $baslangicZamani, $bitisZam
             try {
                 $vardiyaSaatleri = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
                 $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                
+
                 // Vardiya başlangıç ve bitiş zamanlarını hesapla
                 $vardiyaBaslangic = strtotime(date('Y-m-d ', $vardiyaTarihi) . $vardiyaSaatleri['baslangic']);
-                $vardiyaBitis = $vardiyaSaatleri['gece_vardiyasi'] 
+                $vardiyaBitis = $vardiyaSaatleri['gece_vardiyasi']
                     ? strtotime(date('Y-m-d ', $vardiyaTarihi) . $vardiyaSaatleri['bitis']) + 86400
                     : strtotime(date('Y-m-d ', $vardiyaTarihi) . $vardiyaSaatleri['bitis']);
 
@@ -2026,23 +2030,23 @@ function vardiyaSuresiKontrol($vardiyaTuru, $personelId, $tarih)
     try {
         $vardiyaSaatleri = vardiyaSaatleriHesapla($vardiyaTuru);
         $gunlukCalismaSuresi = $vardiyaSaatleri['sure'];
-        
+
         // Aynı gün içindeki diğer vardiyaları kontrol et
         $data = veriOku();
         $gunBaslangic = strtotime(date('Y-m-d 00:00:00', $tarih));
         $gunBitis = strtotime(date('Y-m-d 23:59:59', $tarih));
-        
+
         foreach ($data['vardiyalar'] as $vardiya) {
             if ($vardiya['personel_id'] === $personelId) {
                 $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                
+
                 if ($vardiyaTarihi >= $gunBaslangic && $vardiyaTarihi <= $gunBitis) {
                     $mevcutVardiyaSaatleri = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
                     $gunlukCalismaSuresi += $mevcutVardiyaSaatleri['sure'];
                 }
             }
         }
-        
+
         return [
             'toplam_sure' => $gunlukCalismaSuresi,
             'izin_verilen_sure' => 11, // Günlük maksimum çalışma süresi
