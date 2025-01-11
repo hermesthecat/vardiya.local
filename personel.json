@@ -208,13 +208,12 @@
     "vardiya_talepleri": [
         {
             "id": "64f1a2b3c4g1",
-            "talep_eden_id": "64f1a2b3c4d5",
-            "degisim_yapilacak_vardiya_id": "64f1a2b3c4e1",
-            "talep_edilen_tarih": 1705708800,
-            "talep_edilen_vardiya_turu": "aksam",
+            "vardiya_id": "64f1a2b3c4e1",
+            "talep_eden_personel_id": "64f1a2b3c4d5",
             "aciklama": "Özel durum nedeniyle değişim talebi",
             "durum": "beklemede",
-            "talep_tarihi": 1704672000
+            "olusturma_tarihi": 1704672000,
+            "guncelleme_tarihi": 1704672000
         }
     ],
     "izin_talepleri": [

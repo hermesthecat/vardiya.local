@@ -12,6 +12,13 @@
 <body>
     <?php
     require_once 'functions.php';
+    session_start();
+
+    // Oturum kontrolü
+    if (!isset($_SESSION['kullanici_id'])) {
+        header('Location: giris.php');
+        exit;
+    }
 
     $hata = '';
     $basari = '';
@@ -201,30 +208,36 @@
                     <?php
                     $data = veriOku();
                     foreach ($data['vardiya_talepleri'] as $talep):
+                        // Vardiya kontrolü
                         $vardiya = array_filter($data['vardiyalar'], function ($v) use ($talep) {
-                            return $v['id'] === $talep['vardiya_id'];
+                            return isset($talep['vardiya_id']) && isset($v['id']) && $v['id'] === $talep['vardiya_id'];
                         });
                         $vardiya = reset($vardiya);
+                        if (!$vardiya) continue;
 
+                        // Mevcut personel kontrolü
                         $mevcutPersonel = array_filter($data['personel'], function ($p) use ($vardiya) {
-                            return $p['id'] === $vardiya['personel_id'];
+                            return isset($vardiya['personel_id']) && isset($p['id']) && $p['id'] === $vardiya['personel_id'];
                         });
                         $mevcutPersonel = reset($mevcutPersonel);
+                        if (!$mevcutPersonel) continue;
 
+                        // Talep eden personel kontrolü
                         $talepEden = array_filter($data['personel'], function ($p) use ($talep) {
-                            return $p['id'] === $talep['talep_eden_personel_id'];
+                            return isset($talep['talep_eden_personel_id']) && isset($p['id']) && $p['id'] === $talep['talep_eden_personel_id'];
                         });
                         $talepEden = reset($talepEden);
+                        if (!$talepEden) continue;
                     ?>
                         <tr>
-                            <td><?php echo date('d.m.Y', strtotime($vardiya['tarih'])); ?></td>
+                            <td><?php echo date('d.m.Y', $vardiya['tarih']); ?></td>
                             <td><?php echo vardiyaTuruEtiketGetir($vardiya['vardiya_turu']); ?></td>
                             <td><?php echo htmlspecialchars($mevcutPersonel['ad'] . ' ' . $mevcutPersonel['soyad']); ?></td>
                             <td><?php echo htmlspecialchars($talepEden['ad'] . ' ' . $talepEden['soyad']); ?></td>
-                            <td><?php echo htmlspecialchars($talep['aciklama']); ?></td>
-                            <td><?php echo $talep['durum']; ?></td>
+                            <td><?php echo htmlspecialchars($talep['aciklama'] ?? ''); ?></td>
+                            <td><?php echo $talep['durum'] ?? 'beklemede'; ?></td>
                             <td>
-                                <?php if ($talep['durum'] === 'beklemede'): ?>
+                                <?php if (isset($talep['durum']) && $talep['durum'] === 'beklemede'): ?>
                                     <form method="POST" style="display: inline;">
                                         <input type="hidden" name="talep_id" value="<?php echo $talep['id']; ?>">
                                         <button type="submit" name="talep_guncelle" value="onaylandi" class="btn-duzenle">Onayla</button>
@@ -263,6 +276,9 @@
             });
         });
     </script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>
