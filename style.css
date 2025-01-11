@@ -666,3 +666,69 @@ nav {
     justify-content: center;
   }
 }
+
+/* Ay Seçimi Stilleri */
+.ay-secimi {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 25px;
+}
+
+.ay-secimi .btn-small {
+  background: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #4caf50;
+}
+
+.ay-secimi .btn-small:hover {
+  background: white;
+  color: #4caf50;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+}
+
+.ay-secimi .current-month {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  min-width: 200px;
+  text-align: center;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+}
+
+/* Responsive tasarım için */
+@media (max-width: 768px) {
+  .ay-secimi {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .ay-secimi .current-month {
+    font-size: 20px;
+    min-width: unset;
+    width: 100%;
+  }
+
+  .ay-secimi .btn-small {
+    width: 100%;
+    justify-content: center;
+  }
+}

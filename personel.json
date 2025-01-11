@@ -11,7 +11,9 @@
       "tercihler": {
         "bildirimler": true,
         "tercih_edilen_vardiyalar": ["sabah", "aksam"],
-        "tercih_edilmeyen_gunler": ["pazar"]
+        "tercih_edilmeyen_gunler": [],
+        "max_ardisik_vardiya": 1,
+        "min_gunluk_dinlenme": 8
       },
       "izin_haklari": {
         "yillik": {
@@ -278,6 +280,16 @@
       "aciklama": "Başarılı giriş: ahmet@firma.com",
       "ip_adresi": "127.0.0.1",
       "tarih": 1736590113,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "6782444bd144c",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "tercih_guncelle",
+      "aciklama": "Kullanıcı tercihleri güncellendi: 64f1a2b3c4d5",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736590411,
       "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
     }
   ]

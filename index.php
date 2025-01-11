@@ -155,7 +155,7 @@
                     <a href="kullanicilar.php"><i class="fas fa-user-cog"></i> Kullanıcı Yönetimi</a>
                 <?php endif; ?>
 
-                <a href="izinler.php"><i class="fas fa-calendar-alt"></i> İzin İşlemleri</a>
+                <a href="izin.php"><i class="fas fa-calendar-alt"></i> İzin İşlemleri</a>
                 <a href="profil.php"><i class="fas fa-user-circle"></i> Profil</a>
             </div>
         </nav>
@@ -186,11 +186,19 @@
                     $sonrakiYil++;
                 }
                 ?>
-                <a href="?ay=<?php echo $oncekiAy; ?>&yil=<?php echo $oncekiYil; ?>" class="btn-small">&lt; Önceki Ay</a>
+                <a href="?ay=<?php echo $oncekiAy; ?>&yil=<?php echo $oncekiYil; ?>" class="btn-small">
+                    <i class="fas fa-chevron-left"></i> Önceki Ay
+                </a>
                 <span class="current-month">
-                    <?php echo date('F Y', mktime(0, 0, 0, $ay, 1, $yil)); ?>
+                    <i class="fas fa-calendar-alt"></i>
+                    <?php
+                    setlocale(LC_TIME, 'tr_TR.UTF-8');
+                    echo strftime('%B %Y', mktime(0, 0, 0, $ay, 1, $yil));
+                    ?>
                 </span>
-                <a href="?ay=<?php echo $sonrakiAy; ?>&yil=<?php echo $sonrakiYil; ?>" class="btn-small">Sonraki Ay &gt;</a>
+                <a href="?ay=<?php echo $sonrakiAy; ?>&yil=<?php echo $sonrakiYil; ?>" class="btn-small">
+                    Sonraki Ay <i class="fas fa-chevron-right"></i>
+                </a>
             </div>
         </div>
 

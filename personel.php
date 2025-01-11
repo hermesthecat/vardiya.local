@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personel Yönetimi - Vardiya Sistemi</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
@@ -36,10 +37,30 @@
     ?>
 
     <div class="container">
-        <div class="header-nav">
-            <h1>Personel Yönetimi</h1>
-            <a href="index.php" class="nav-btn">Vardiya Takvimine Dön</a>
-        </div>
+        <h1>Personel Yönetimi</h1>
+
+        <nav>
+            <div class="user-info">
+                <div>
+                    <i class="fas fa-user"></i>
+                    Hoş geldiniz, <?php echo htmlspecialchars($_SESSION['ad_soyad']); ?>
+                    (<?php echo htmlspecialchars($_SESSION['rol']); ?>)
+                </div>
+                <a href="cikis.php"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+            </div>
+
+            <div class="menu">
+                <a href="index.php"><i class="fas fa-calendar-week"></i> Vardiya Takvimi</a>
+                <?php if (in_array($_SESSION['rol'], ['yonetici', 'admin'])): ?>
+                    <a href="personel.php" class="active"><i class="fas fa-users"></i> Personel Yönetimi</a>
+                <?php endif; ?>
+                <?php if ($_SESSION['rol'] === 'admin'): ?>
+                    <a href="kullanicilar.php"><i class="fas fa-user-cog"></i> Kullanıcı Yönetimi</a>
+                <?php endif; ?>
+                <a href="izin.php"><i class="fas fa-calendar-alt"></i> İzin İşlemleri</a>
+                <a href="profil.php"><i class="fas fa-user-circle"></i> Profil</a>
+            </div>
+        </nav>
 
         <?php if ($hata): ?>
             <div class="hata-mesaji"><?php echo htmlspecialchars($hata); ?></div>

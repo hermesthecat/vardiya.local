@@ -2058,3 +2058,105 @@ function vardiyaSuresiKontrol($vardiyaTuru, $personelId, $tarih)
         throw $e;
     }
 }
+
+/**
+ * Belirtilen tarih aralığı için vardiya raporunu getirir
+ * 
+ * @param string $baslangic_tarihi Y-m-d formatında başlangıç tarihi
+ * @param string $bitis_tarihi Y-m-d formatında bitiş tarihi
+ * @param string|null $personel_id Belirli bir personel için filtreleme (opsiyonel)
+ * @param string|null $vardiya_turu Belirli bir vardiya türü için filtreleme (opsiyonel)
+ * @return array Rapor verileri
+ * @throws Exception Hata durumunda
+ */
+function vardiyaRaporuGetir($baslangic_tarihi, $bitis_tarihi, $personel_id = null, $vardiya_turu = null) {
+    $data = veriOku();
+    $vardiyalar = $data['vardiyalar'] ?? [];
+    $personeller = $data['personel'] ?? [];
+    $vardiyaTurleri = vardiyaTurleriniGetir();
+
+    // Filtreleme
+    $filtrelenmisVardiyalar = array_filter($vardiyalar, function($vardiya) use ($baslangic_tarihi, $bitis_tarihi, $personel_id, $vardiya_turu) {
+        if ($vardiya['tarih'] < $baslangic_tarihi || $vardiya['tarih'] > $bitis_tarihi) {
+            return false;
+        }
+        if ($personel_id !== null && $vardiya['personel_id'] !== $personel_id) {
+            return false;
+        }
+        if ($vardiya_turu !== null && $vardiya['vardiya_turu'] !== $vardiya_turu) {
+            return false;
+        }
+        return true;
+    });
+
+    // Vardiya dağılımını hesapla
+    $vardiyaDagilimi = [];
+    foreach ($filtrelenmisVardiyalar as $vardiya) {
+        $tur = $vardiya['vardiya_turu'];
+        if (!isset($vardiyaDagilimi[$tur])) {
+            $vardiyaDagilimi[$tur] = [
+                'etiket' => $vardiyaTurleri[$tur]['etiket'],
+                'sayi' => 0
+            ];
+        }
+        $vardiyaDagilimi[$tur]['sayi']++;
+    }
+
+    // Günlük dağılımı hesapla
+    $gunlukDagilim = [];
+    $current = strtotime($baslangic_tarihi);
+    $end = strtotime($bitis_tarihi);
+    while ($current <= $end) {
+        $tarih = date('Y-m-d', $current);
+        $gunlukDagilim[$tarih] = [
+            'tarih' => date('d.m.Y', $current),
+            'sayi' => 0
+        ];
+        $current = strtotime('+1 day', $current);
+    }
+
+    foreach ($filtrelenmisVardiyalar as $vardiya) {
+        $gunlukDagilim[$vardiya['tarih']]['sayi']++;
+    }
+
+    // Toplam saatleri hesapla
+    $toplamSaat = 0;
+    foreach ($filtrelenmisVardiyalar as $vardiya) {
+        $tur = $vardiyaTurleri[$vardiya['vardiya_turu']];
+        $baslangic = strtotime($tur['baslangic']);
+        $bitis = strtotime($tur['bitis']);
+        if ($bitis < $baslangic) {
+            $bitis = strtotime('+1 day', $bitis);
+        }
+        $toplamSaat += ($bitis - $baslangic) / 3600;
+    }
+
+    // Detaylı vardiya listesi
+    $detayliVardiyalar = [];
+    foreach ($filtrelenmisVardiyalar as $vardiya) {
+        $personel = array_filter($personeller, function($p) use ($vardiya) {
+            return $p['id'] === $vardiya['personel_id'];
+        });
+        $personel = reset($personel);
+        $tur = $vardiyaTurleri[$vardiya['vardiya_turu']];
+
+        $detayliVardiyalar[] = [
+            'tarih' => $vardiya['tarih'],
+            'personel_adi' => $personel['ad'] . ' ' . $personel['soyad'],
+            'vardiya_turu' => $tur['etiket'],
+            'baslangic' => $tur['baslangic'],
+            'bitis' => $tur['bitis'],
+            'durum' => $vardiya['durum'] ?? 'Normal'
+        ];
+    }
+
+    // Sonuçları döndür
+    return [
+        'toplam_vardiya' => count($filtrelenmisVardiyalar),
+        'toplam_personel' => count(array_unique(array_column($filtrelenmisVardiyalar, 'personel_id'))),
+        'toplam_saat' => round($toplamSaat),
+        'vardiya_dagilimi' => array_values($vardiyaDagilimi),
+        'gunluk_dagilim' => array_values($gunlukDagilim),
+        'vardiyalar' => $detayliVardiyalar
+    ];
+}
