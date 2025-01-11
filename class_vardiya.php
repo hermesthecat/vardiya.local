@@ -5,16 +5,45 @@
  */
 class Vardiya
 {
+    private $db;
+    private $islemLog;
+    private static $instance = null;
+
+    private function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->islemLog = IslemLog::getInstance();
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * Vardiya silme
      */
     public function sil($vardiyaId)
     {
-        $data = veriOku();
-        $data['vardiyalar'] = array_filter($data['vardiyalar'], function ($vardiya) use ($vardiyaId) {
-            return $vardiya['id'] !== $vardiyaId;
-        });
-        $this->veriYaz($data);
+        // Vardiya kontrolü
+        $sql = "SELECT v.*, p.ad, p.soyad 
+                FROM vardiyalar v 
+                LEFT JOIN personel p ON v.personel_id = p.id 
+                WHERE v.id = ?";
+        $vardiya = $this->db->fetch($sql, [$vardiyaId]);
+        
+        if (!$vardiya) {
+            throw new Exception('Vardiya bulunamadı.');
+        }
+
+        // Vardiyayı sil
+        $sql = "DELETE FROM vardiyalar WHERE id = ?";
+        $this->db->query($sql, [$vardiyaId]);
+
+        $this->islemLog->logKaydet('vardiya_sil', "Vardiya silindi: {$vardiya['ad']} {$vardiya['soyad']} - " . date('d.m.Y', $vardiya['tarih']));
     }
 
     /**
@@ -37,26 +66,33 @@ class Vardiya
             $tarih = strtotime($tarih);
         }
 
-        $data = veriOku();
-        $vardiyaBulundu = false;
-
-        foreach ($data['vardiyalar'] as &$vardiya) {
-            if ($vardiya['id'] === $vardiyaId) {
-                $vardiya['personel_id'] = $personelId;
-                $vardiya['tarih'] = $tarih;
-                $vardiya['vardiya_turu'] = $vardiyaTuru;
-                $vardiya['notlar'] = $notlar;
-                $vardiyaBulundu = true;
-                break;
-            }
-        }
-
-        if (!$vardiyaBulundu) {
+        // Vardiya kontrolü
+        $sql = "SELECT * FROM vardiyalar WHERE id = ?";
+        $vardiya = $this->db->fetch($sql, [$vardiyaId]);
+        
+        if (!$vardiya) {
             throw new Exception('Vardiya bulunamadı.');
         }
 
-        $this->veriYaz($data);
-        islemLogKaydet('vardiya_duzenle', "Vardiya düzenlendi: ID: $vardiyaId, Personel: $personelId, Tarih: " . date('Y-m-d', $tarih));
+        // Vardiyayı güncelle
+        $sql = "UPDATE vardiyalar SET 
+                personel_id = ?, 
+                tarih = ?, 
+                vardiya_turu = ?, 
+                notlar = ? 
+                WHERE id = ?";
+                
+        $params = [
+            $personelId,
+            $tarih,
+            $vardiyaTuru,
+            $notlar,
+            $vardiyaId
+        ];
+
+        $this->db->query($sql, $params);
+
+        $this->islemLog->logKaydet('vardiya_duzenle', "Vardiya düzenlendi: ID: $vardiyaId, Personel: $personelId, Tarih: " . date('d.m.Y', $tarih));
     }
 
     /**
@@ -69,16 +105,20 @@ class Vardiya
             $tarih = strtotime($tarih);
         }
 
-        $data = veriOku();
-        foreach ($data['vardiyalar'] as $vardiya) {
-            if ($vardiya['personel_id'] === $personelId && $vardiya['id'] !== $haricVardiyaId) {
-                $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                if (date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $tarih)) {
-                    return true;
-                }
-            }
+        $sql = "SELECT COUNT(*) as adet 
+                FROM vardiyalar 
+                WHERE personel_id = ? 
+                AND DATE(FROM_UNIXTIME(tarih)) = DATE(FROM_UNIXTIME(?))";
+        
+        $params = [$personelId, $tarih];
+
+        if ($haricVardiyaId !== null) {
+            $sql .= " AND id != ?";
+            $params[] = $haricVardiyaId;
         }
-        return false;
+
+        $sonuc = $this->db->fetch($sql, $params);
+        return $sonuc['adet'] > 0;
     }
 
     /**
@@ -86,16 +126,12 @@ class Vardiya
      */
     public function degisimTalebiOlustur($vardiyaId, $talepEdenPersonelId, $aciklama)
     {
-        $data = veriOku();
-
         // Vardiya kontrolü
-        $vardiya = null;
-        foreach ($data['vardiyalar'] as $v) {
-            if ($v['id'] === $vardiyaId) {
-                $vardiya = $v;
-                break;
-            }
-        }
+        $sql = "SELECT v.*, p.id as personel_id 
+                FROM vardiyalar v 
+                LEFT JOIN personel p ON v.personel_id = p.id 
+                WHERE v.id = ?";
+        $vardiya = $this->db->fetch($sql, [$vardiyaId]);
 
         if (!$vardiya) {
             throw new Exception('Vardiya bulunamadı.');
@@ -106,25 +142,24 @@ class Vardiya
             throw new Exception('Kendi vardiyanız için değişim talebi oluşturamazsınız.');
         }
 
-        $yeniTalep = [
-            'id' => uniqid(),
-            'vardiya_id' => $vardiyaId,
-            'talep_eden_personel_id' => $talepEdenPersonelId,
-            'durum' => 'beklemede',
-            'aciklama' => $aciklama,
-            'olusturma_tarihi' => time(),
-            'guncelleme_tarihi' => time()
+        // Talebi ekle
+        $sql = "INSERT INTO vardiya_talepleri 
+                (vardiya_id, talep_eden_personel_id, durum, aciklama, olusturma_tarihi, guncelleme_tarihi) 
+                VALUES (?, ?, 'beklemede', ?, ?, ?)";
+                
+        $params = [
+            $vardiyaId,
+            $talepEdenPersonelId,
+            $aciklama,
+            time(),
+            time()
         ];
 
-        if (!isset($data['vardiya_talepleri'])) {
-            $data['vardiya_talepleri'] = [];
-        }
+        $this->db->query($sql, $params);
+        $talepId = $this->db->lastInsertId();
 
-        $data['vardiya_talepleri'][] = $yeniTalep;
-        $this->veriYaz($data);
-
-        islemLogKaydet('vardiya_talep', "Vardiya değişim talebi oluşturuldu: Vardiya ID: $vardiyaId");
-        return $yeniTalep['id'];
+        $this->islemLog->logKaydet('vardiya_talep', "Vardiya değişim talebi oluşturuldu: Vardiya ID: $vardiyaId");
+        return $talepId;
     }
 
     /**
@@ -132,24 +167,31 @@ class Vardiya
      */
     public function talepGuncelle($talepId, $durum, $yoneticiNotu = '')
     {
-        $data = veriOku();
-        $talep = null;
+        // Talep kontrolü
+        $sql = "SELECT * FROM vardiya_talepleri WHERE id = ?";
+        $talep = $this->db->fetch($sql, [$talepId]);
 
-        foreach ($data['vardiya_talepleri'] as &$talep) {
-            if ($talep['id'] === $talepId) {
-                $talep['durum'] = $durum;
-                $talep['yonetici_notu'] = $yoneticiNotu;
-                $talep['guncelleme_tarihi'] = time();
-                break;
-            }
-        }
-
-        if ($talep === null) {
+        if (!$talep) {
             throw new Exception('Vardiya talebi bulunamadı.');
         }
 
-        $this->veriYaz($data);
-        islemLogKaydet('vardiya_talebi_guncelle', "Vardiya talebi güncellendi: $talepId - Durum: $durum");
+        // Talebi güncelle
+        $sql = "UPDATE vardiya_talepleri 
+                SET durum = ?, 
+                    yonetici_notu = ?, 
+                    guncelleme_tarihi = ? 
+                WHERE id = ?";
+                
+        $params = [
+            $durum,
+            $yoneticiNotu,
+            time(),
+            $talepId
+        ];
+
+        $this->db->query($sql, $params);
+
+        $this->islemLog->logKaydet('vardiya_talebi_guncelle', "Vardiya talebi güncellendi: $talepId - Durum: $durum");
         return true;
     }
 
@@ -158,25 +200,27 @@ class Vardiya
      */
     public function detayGetir($vardiyaId)
     {
-        $data = veriOku();
-        foreach ($data['vardiyalar'] as $vardiya) {
-            if ($vardiya['id'] === $vardiyaId) {
-                $personel = array_filter($data['personel'], function ($p) use ($vardiya) {
-                    return $p['id'] === $vardiya['personel_id'];
-                });
-                $personel = reset($personel);
+        $sql = "SELECT v.*, p.ad, p.soyad, vt.etiket as vardiya_turu_adi 
+                FROM vardiyalar v 
+                LEFT JOIN personel p ON v.personel_id = p.id 
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id 
+                WHERE v.id = ?";
+                
+        $vardiya = $this->db->fetch($sql, [$vardiyaId]);
 
-                return [
-                    'id' => $vardiya['id'],
-                    'personel_id' => $vardiya['personel_id'],
-                    'personel_ad' => $personel['ad'] . ' ' . $personel['soyad'],
-                    'tarih' => $vardiya['tarih'],
-                    'vardiya_turu' => $vardiya['vardiya_turu'],
-                    'notlar' => $vardiya['notlar'] ?? ''
-                ];
-            }
+        if (!$vardiya) {
+            return null;
         }
-        return null;
+
+        return [
+            'id' => $vardiya['id'],
+            'personel_id' => $vardiya['personel_id'],
+            'personel_ad' => $vardiya['ad'] . ' ' . $vardiya['soyad'],
+            'tarih' => $vardiya['tarih'],
+            'vardiya_turu' => $vardiya['vardiya_turu'],
+            'vardiya_turu_adi' => $vardiya['vardiya_turu_adi'],
+            'notlar' => $vardiya['notlar'] ?? ''
+        ];
     }
 
     /**
@@ -184,51 +228,33 @@ class Vardiya
      */
     private function ardisikCalismaGunleriniKontrolEt($personelId, $tarih)
     {
-        $data = veriOku();
-
         // Tarihi timestamp'e çevir
         if (!is_numeric($tarih)) {
             $tarih = strtotime($tarih);
         }
 
-        $ardisikGunler = 0;
+        // Önceki 6 günü kontrol et
+        $sql = "SELECT COUNT(DISTINCT DATE(FROM_UNIXTIME(tarih))) as ardisik_gun 
+                FROM vardiyalar 
+                WHERE personel_id = ? 
+                AND tarih BETWEEN ? AND ?";
 
-        // Seçilen tarihten geriye doğru 6 günü kontrol et
-        for ($i = 0; $i < 6; $i++) {
-            $kontrolTarihi = strtotime("-$i day", $tarih);
-
-            foreach ($data['vardiyalar'] as $vardiya) {
-                if ($vardiya['personel_id'] === $personelId) {
-                    $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                    if (date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $kontrolTarihi)) {
-                        $ardisikGunler++;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Eğer 6 gün üst üste çalışmışsa, 7. gün çalışamaz
-        if ($ardisikGunler >= 6) {
+        // Seçilen tarihten önceki 6 gün
+        $baslangic = strtotime('-6 days', $tarih);
+        $bitis = $tarih;
+        
+        $oncekiGunler = $this->db->fetch($sql, [$personelId, $baslangic, $bitis]);
+        if ($oncekiGunler['ardisik_gun'] >= 6) {
             return false;
         }
 
-        // Seçilen tarihten sonraki günleri de kontrol et
-        for ($i = 1; $i < 6; $i++) {
-            $kontrolTarihi = strtotime("+$i day", $tarih);
-
-            foreach ($data['vardiyalar'] as $vardiya) {
-                if ($vardiya['personel_id'] === $personelId) {
-                    $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                    if (date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $kontrolTarihi)) {
-                        $ardisikGunler++;
-                        if ($ardisikGunler >= 6) {
-                            return false;
-                        }
-                        break;
-                    }
-                }
-            }
+        // Seçilen tarihten sonraki 6 gün
+        $baslangic = $tarih;
+        $bitis = strtotime('+6 days', $tarih);
+        
+        $sonrakiGunler = $this->db->fetch($sql, [$personelId, $baslangic, $bitis]);
+        if ($sonrakiGunler['ardisik_gun'] >= 6) {
+            return false;
         }
 
         return true;
@@ -254,21 +280,15 @@ class Vardiya
             $tarih = strtotime($tarih);
         }
 
-        $data = veriOku();
-        $yeniVardiya = [
-            'id' => uniqid(),
-            'personel_id' => $personelId,
-            'tarih' => $tarih,
-            'vardiya_turu' => $vardiyaTuru,
-            'notlar' => $notlar,
-            'olusturma_tarihi' => time()
-        ];
+        // Vardiyayı ekle
+        $sql = "INSERT INTO vardiyalar (personel_id, tarih, vardiya_turu, notlar) VALUES (?, ?, ?, ?)";
+        $params = [$personelId, $tarih, $vardiyaTuru, $notlar];
 
-        $data['vardiyalar'][] = $yeniVardiya;
-        $this->veriYaz($data);
+        $this->db->query($sql, $params);
+        $vardiyaId = $this->db->lastInsertId();
 
-        islemLogKaydet('vardiya_ekle', "Vardiya eklendi: Personel: $personelId, Tarih: " . date('Y-m-d', $tarih));
-        return $yeniVardiya['id'];
+        $this->islemLog->logKaydet('vardiya_ekle', "Yeni vardiya eklendi: Personel: $personelId, Tarih: " . date('d.m.Y', $tarih));
+        return $vardiyaId;
     }
 
     /**
@@ -281,28 +301,25 @@ class Vardiya
             $tarih = strtotime($tarih);
         }
 
-        $data = veriOku();
-        $vardiyalar = [];
+        $sql = "SELECT v.*, p.ad, p.soyad, vt.etiket as vardiya_turu_adi 
+                FROM vardiyalar v 
+                LEFT JOIN personel p ON v.personel_id = p.id 
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id 
+                WHERE DATE(FROM_UNIXTIME(v.tarih)) = DATE(FROM_UNIXTIME(?))
+                ORDER BY vt.baslangic ASC";
 
-        foreach ($data['vardiyalar'] as $vardiya) {
-            $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            if (date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $tarih)) {
-                $personel = array_filter($data['personel'], function ($p) use ($vardiya) {
-                    return $p['id'] === $vardiya['personel_id'];
-                });
-                $personel = reset($personel);
+        $vardiyalar = $this->db->fetchAll($sql, [$tarih]);
 
-                $vardiyalar[] = [
-                    'id' => $vardiya['id'],
-                    'personel_id' => $vardiya['personel_id'],
-                    'personel_ad' => $personel['ad'] . ' ' . $personel['soyad'],
-                    'vardiya_turu' => $vardiya['vardiya_turu'],
-                    'notlar' => $vardiya['notlar'] ?? ''
-                ];
-            }
-        }
-
-        return $vardiyalar;
+        return array_map(function($vardiya) {
+            return [
+                'id' => $vardiya['id'],
+                'personel_id' => $vardiya['personel_id'],
+                'personel_ad' => $vardiya['ad'] . ' ' . $vardiya['soyad'],
+                'vardiya_turu' => $vardiya['vardiya_turu'],
+                'vardiya_turu_adi' => $vardiya['vardiya_turu_adi'],
+                'notlar' => $vardiya['notlar'] ?? ''
+            ];
+        }, $vardiyalar);
     }
 
     /**
@@ -310,8 +327,12 @@ class Vardiya
      */
     public function saatleriHesapla($vardiyaTuru)
     {
-        $vardiyaTurleri = $this->turleriniGetir();
-        $vardiya = $vardiyaTurleri[$vardiyaTuru];
+        $sql = "SELECT * FROM vardiya_turleri WHERE id = ?";
+        $vardiya = $this->db->fetch($sql, [$vardiyaTuru]);
+
+        if (!$vardiya) {
+            throw new Exception('Vardiya türü bulunamadı.');
+        }
 
         $baslangic = strtotime($vardiya['baslangic']);
         $bitis = strtotime($vardiya['bitis']);
@@ -335,25 +356,14 @@ class Vardiya
      */
     public function turuDagilimi($baslangicTarih, $bitisTarih)
     {
-        $data = veriOku();
-        $vardiyaTurleri = $this->turleriniGetir();
-        $dagilim = [];
+        $sql = "SELECT vt.id, vt.etiket, COUNT(v.id) as sayi 
+                FROM vardiya_turleri vt 
+                LEFT JOIN vardiyalar v ON v.vardiya_turu = vt.id 
+                AND v.tarih BETWEEN ? AND ? 
+                GROUP BY vt.id, vt.etiket 
+                ORDER BY vt.id";
 
-        foreach ($vardiyaTurleri as $id => $tur) {
-            $dagilim[$id] = [
-                'etiket' => $tur['etiket'],
-                'sayi' => 0
-            ];
-        }
-
-        foreach ($data['vardiyalar'] as $vardiya) {
-            $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            if ($vardiyaTarihi >= strtotime($baslangicTarih) && $vardiyaTarihi <= strtotime($bitisTarih)) {
-                $dagilim[$vardiya['vardiya_turu']]['sayi']++;
-            }
-        }
-
-        return array_values($dagilim);
+        return $this->db->fetchAll($sql, [strtotime($baslangicTarih), strtotime($bitisTarih)]);
     }
 
     /**
@@ -361,159 +371,66 @@ class Vardiya
      */
     public function akilliOneriOlustur($tarih, $vardiyaTuru)
     {
-        $data = veriOku();
-        $personeller = $data['personel'];
-        $puanlar = [];
-
         // Tarihi timestamp'e çevir
         if (!is_numeric($tarih)) {
             $tarih = strtotime($tarih);
         }
 
-        foreach ($personeller as $personel) {
+        // Son 30 gündeki vardiya sayılarını hesapla
+        $sql = "SELECT p.id, p.ad, p.soyad,
+                COUNT(v.id) as son_otuz_gun_vardiya,
+                MAX(v.tarih) as son_calisma,
+                pt.tercih_puani
+                FROM personel p
+                LEFT JOIN vardiyalar v ON v.personel_id = p.id 
+                AND v.tarih BETWEEN ? AND ?
+                LEFT JOIN personel_tercihleri pt ON pt.personel_id = p.id 
+                AND pt.vardiya_turu = ?
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM vardiyalar v2 
+                    WHERE v2.personel_id = p.id 
+                    AND DATE(FROM_UNIXTIME(v2.tarih)) = DATE(FROM_UNIXTIME(?))
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM vardiyalar v3 
+                    WHERE v3.personel_id = p.id 
+                    GROUP BY DATE(FROM_UNIXTIME(v3.tarih))
+                    HAVING COUNT(*) >= 6
+                )
+                GROUP BY p.id, p.ad, p.soyad, pt.tercih_puani
+                ORDER BY son_otuz_gun_vardiya ASC, son_calisma ASC, pt.tercih_puani DESC
+                LIMIT 5";
+
+        $params = [
+            strtotime('-30 days', $tarih),
+            $tarih,
+            $vardiyaTuru,
+            $tarih
+        ];
+
+        $oneriler = $this->db->fetchAll($sql, $params);
+
+        return array_map(function($oneri) use ($tarih) {
             $puan = 100;
-
-            // Vardiya çakışması kontrolü
-            if ($this->cakismaVarMi($personel['id'], $tarih, $vardiyaTuru)) {
-                continue; // Bu personeli değerlendirmeye alma
+            
+            // Vardiya sayısına göre puan düşür
+            $puan -= ($oneri['son_otuz_gun_vardiya'] ?? 0) * 2;
+            
+            // Tercihe göre puan ekle
+            $puan += ($oneri['tercih_puani'] ?? 0) * 10;
+            
+            // Son çalışma tarihine göre puan ekle
+            if ($oneri['son_calisma']) {
+                $gunFarki = floor(($tarih - $oneri['son_calisma']) / (60 * 60 * 24));
+                $puan += $gunFarki * 5;
             }
 
-            // Ardışık çalışma günleri kontrolü
-            if (!$this->ardisikCalismaGunleriniKontrolEt($personel['id'], $tarih)) {
-                continue; // Bu personeli değerlendirmeye alma
-            }
-
-            // Son 30 günde toplam vardiya sayısı
-            $sonOtuzGunVardiyaSayisi = 0;
-            $kontrolTarihi = strtotime('-30 days', $tarih);
-            foreach ($data['vardiyalar'] as $vardiya) {
-                if ($vardiya['personel_id'] === $personel['id']) {
-                    $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                    if ($vardiyaTarihi >= $kontrolTarihi && $vardiyaTarihi <= $tarih) {
-                        $sonOtuzGunVardiyaSayisi++;
-                    }
-                }
-            }
-
-            // Vardiya sayısına göre puan düşür (ne kadar çok çalışmışsa o kadar düşük puan)
-            $puan -= $sonOtuzGunVardiyaSayisi * 2;
-
-            // Personel tercihlerine göre puan ekle/çıkar
-            if (isset($personel['tercihler'][$vardiyaTuru])) {
-                $puan += $personel['tercihler'][$vardiyaTuru] * 10;
-            }
-
-            // Son çalışma tarihine göre puan ekle (ne kadar uzun süre çalışmadıysa o kadar yüksek puan)
-            $sonCalisma = 0;
-            foreach ($data['vardiyalar'] as $vardiya) {
-                if ($vardiya['personel_id'] === $personel['id']) {
-                    $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                    if ($vardiyaTarihi > $sonCalisma) {
-                        $sonCalisma = $vardiyaTarihi;
-                    }
-                }
-            }
-            $gunFarki = floor(($tarih - $sonCalisma) / (60 * 60 * 24));
-            $puan += $gunFarki * 5;
-
-            $puanlar[] = [
-                'personel_id' => $personel['id'],
-                'ad_soyad' => $personel['ad'] . ' ' . $personel['soyad'],
+            return [
+                'personel_id' => $oneri['id'],
+                'ad_soyad' => $oneri['ad'] . ' ' . $oneri['soyad'],
                 'puan' => max(0, $puan)
             ];
-        }
-
-        // Puanlara göre sırala
-        usort($puanlar, function ($a, $b) {
-            return $b['puan'] - $a['puan'];
-        });
-
-        return array_slice($puanlar, 0, 5); // En yüksek puanlı 5 personeli döndür
-    }
-
-    /**
-     * Vardiya türlerini getir
-     */
-    public function turleriniGetir()
-    {
-        return [
-            'sabah' => [
-                'etiket' => 'Sabah',
-                'baslangic' => '08:00',
-                'bitis' => '16:00',
-                'renk' => '#4CAF50',
-                'aciklama' => 'Sabah vardiyası (08:00-16:00)',
-                'mola' => [
-                    ['baslangic' => '10:00', 'bitis' => '10:15', 'tur' => 'çay molası'],
-                    ['baslangic' => '12:00', 'bitis' => '12:30', 'tur' => 'yemek molası'],
-                    ['baslangic' => '14:00', 'bitis' => '14:15', 'tur' => 'çay molası']
-                ]
-            ],
-            'aksam' => [
-                'etiket' => 'Akşam',
-                'baslangic' => '16:00',
-                'bitis' => '24:00',
-                'renk' => '#2196F3',
-                'aciklama' => 'Akşam vardiyası (16:00-24:00)',
-                'mola' => [
-                    ['baslangic' => '18:00', 'bitis' => '18:15', 'tur' => 'çay molası'],
-                    ['baslangic' => '20:00', 'bitis' => '20:30', 'tur' => 'yemek molası'],
-                    ['baslangic' => '22:00', 'bitis' => '22:15', 'tur' => 'çay molası']
-                ]
-            ],
-            'gece' => [
-                'etiket' => 'Gece',
-                'baslangic' => '24:00',
-                'bitis' => '08:00',
-                'renk' => '#9C27B0',
-                'aciklama' => 'Gece vardiyası (24:00-08:00)',
-                'mola' => [
-                    ['baslangic' => '02:00', 'bitis' => '02:15', 'tur' => 'çay molası'],
-                    ['baslangic' => '04:00', 'bitis' => '04:30', 'tur' => 'yemek molası'],
-                    ['baslangic' => '06:00', 'bitis' => '06:15', 'tur' => 'çay molası']
-                ]
-            ]
-        ];
-    }
-
-    /**
-     * Vardiya türü etiketini getir
-     */
-    public function turuEtiketGetir($vardiyaTuru)
-    {
-        $turler = $this->turleriniGetir();
-        return $turler[$vardiyaTuru]['etiket'] ?? 'Bilinmeyen Vardiya';
-    }
-
-    /**
-     * Vardiya detaylarını getir
-     */
-    public function turuDetayGetir($vardiyaTuru)
-    {
-        $turler = $this->turleriniGetir();
-        if (!isset($turler[$vardiyaTuru])) {
-            throw new Exception('Geçersiz vardiya türü.');
-        }
-
-        $vardiya = $turler[$vardiyaTuru];
-        $baslangic = strtotime($vardiya['baslangic']);
-        $bitis = strtotime($vardiya['bitis']);
-
-        if ($bitis < $baslangic) {
-            $bitis = strtotime('+1 day', $bitis);
-        }
-
-        $sure = ($bitis - $baslangic) / 3600;
-
-        return [
-            'etiket' => $vardiya['etiket'],
-            'baslangic' => $vardiya['baslangic'],
-            'bitis' => $vardiya['bitis'],
-            'sure' => $sure,
-            'renk' => $vardiya['renk'],
-            'aciklama' => $vardiya['aciklama'],
-            'mola' => $vardiya['mola']
-        ];
+        }, $oneriler);
     }
 
     /**
@@ -521,35 +438,44 @@ class Vardiya
      */
     public function cakismaDetayliKontrol($personelId, $baslangicZamani, $bitisZamani, $haricVardiyaId = null)
     {
-        $data = veriOku();
-        $vardiyaTurleri = $this->turleriniGetir();
+        $sql = "SELECT v.*, vt.etiket, vt.baslangic, vt.bitis
+                FROM vardiyalar v
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id
+                WHERE v.personel_id = ?
+                AND DATE(FROM_UNIXTIME(v.tarih)) = DATE(FROM_UNIXTIME(?))";
 
-        foreach ($data['vardiyalar'] as $vardiya) {
-            if ($vardiya['personel_id'] === $personelId && $vardiya['id'] !== $haricVardiyaId) {
-                $tur = $vardiyaTurleri[$vardiya['vardiya_turu']];
-                $vardiyaBaslangic = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $tur['baslangic']);
-                $vardiyaBitis = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $tur['bitis']);
+        $params = [$personelId, $baslangicZamani];
 
-                if ($vardiyaBitis < $vardiyaBaslangic) {
-                    $vardiyaBitis = strtotime('+1 day', $vardiyaBitis);
-                }
+        if ($haricVardiyaId !== null) {
+            $sql .= " AND v.id != ?";
+            $params[] = $haricVardiyaId;
+        }
 
-                // Çakışma kontrolü
-                if (
-                    ($baslangicZamani >= $vardiyaBaslangic && $baslangicZamani < $vardiyaBitis) ||
-                    ($bitisZamani > $vardiyaBaslangic && $bitisZamani <= $vardiyaBitis) ||
-                    ($baslangicZamani <= $vardiyaBaslangic && $bitisZamani >= $vardiyaBitis)
-                ) {
-                    return [
-                        'cakisma_var' => true,
-                        'vardiya' => [
-                            'id' => $vardiya['id'],
-                            'baslangic' => date('Y-m-d H:i', $vardiyaBaslangic),
-                            'bitis' => date('Y-m-d H:i', $vardiyaBitis),
-                            'tur' => $tur['etiket']
-                        ]
-                    ];
-                }
+        $vardiyalar = $this->db->fetchAll($sql, $params);
+
+        foreach ($vardiyalar as $vardiya) {
+            $vardiyaBaslangic = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $vardiya['baslangic']);
+            $vardiyaBitis = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $vardiya['bitis']);
+
+            if ($vardiyaBitis < $vardiyaBaslangic) {
+                $vardiyaBitis = strtotime('+1 day', $vardiyaBitis);
+            }
+
+            // Çakışma kontrolü
+            if (
+                ($baslangicZamani >= $vardiyaBaslangic && $baslangicZamani < $vardiyaBitis) ||
+                ($bitisZamani > $vardiyaBaslangic && $bitisZamani <= $vardiyaBitis) ||
+                ($baslangicZamani <= $vardiyaBaslangic && $bitisZamani >= $vardiyaBitis)
+            ) {
+                return [
+                    'cakisma_var' => true,
+                    'vardiya' => [
+                        'id' => $vardiya['id'],
+                        'baslangic' => date('Y-m-d H:i', $vardiyaBaslangic),
+                        'bitis' => date('Y-m-d H:i', $vardiyaBitis),
+                        'tur' => $vardiya['etiket']
+                    ]
+                ];
             }
         }
 
@@ -561,13 +487,17 @@ class Vardiya
      */
     public function suresiKontrol($vardiyaTuru, $personelId, $tarih)
     {
-        $data = veriOku();
-        $vardiyaTurleri = $this->turleriniGetir();
-        $tur = $vardiyaTurleri[$vardiyaTuru];
-
         // Tarihi timestamp'e çevir
         if (!is_numeric($tarih)) {
             $tarih = strtotime($tarih);
+        }
+
+        // Vardiya türü bilgilerini al
+        $sql = "SELECT * FROM vardiya_turleri WHERE id = ?";
+        $tur = $this->db->fetch($sql, [$vardiyaTuru]);
+
+        if (!$tur) {
+            throw new Exception('Vardiya türü bulunamadı.');
         }
 
         $baslangicZamani = strtotime(date('Y-m-d', $tarih) . ' ' . $tur['baslangic']);
@@ -580,56 +510,59 @@ class Vardiya
         // Önceki ve sonraki vardiyalarla minimum süre kontrolü
         $minimumSure = 11 * 3600; // 11 saat (saniye cinsinden)
 
-        foreach ($data['vardiyalar'] as $vardiya) {
-            if ($vardiya['personel_id'] === $personelId) {
-                $digerTur = $vardiyaTurleri[$vardiya['vardiya_turu']];
-                $digerBaslangic = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $digerTur['baslangic']);
-                $digerBitis = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $digerTur['bitis']);
+        $sql = "SELECT v.*, vt.baslangic, vt.bitis
+                FROM vardiyalar v
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id
+                WHERE v.personel_id = ?
+                AND DATE(FROM_UNIXTIME(v.tarih)) BETWEEN DATE(FROM_UNIXTIME(?)) AND DATE(FROM_UNIXTIME(?))";
 
-                if ($digerBitis < $digerBaslangic) {
-                    $digerBitis = strtotime('+1 day', $digerBitis);
+        $params = [
+            $personelId,
+            strtotime('-1 day', $tarih),
+            strtotime('+1 day', $tarih)
+        ];
+
+        $vardiyalar = $this->db->fetchAll($sql, $params);
+
+        foreach ($vardiyalar as $vardiya) {
+            $digerBaslangic = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $vardiya['baslangic']);
+            $digerBitis = strtotime(date('Y-m-d', $vardiya['tarih']) . ' ' . $vardiya['bitis']);
+
+            if ($digerBitis < $digerBaslangic) {
+                $digerBitis = strtotime('+1 day', $digerBitis);
+            }
+
+            // Önceki vardiya kontrolü
+            if ($digerBitis <= $baslangicZamani) {
+                $araSure = $baslangicZamani - $digerBitis;
+                if ($araSure < $minimumSure) {
+                    return [
+                        'uygun' => false,
+                        'mesaj' => 'İki vardiya arası en az 11 saat olmalıdır.',
+                        'onceki_vardiya' => [
+                            'id' => $vardiya['id'],
+                            'bitis' => date('Y-m-d H:i', $digerBitis)
+                        ]
+                    ];
                 }
+            }
 
-                // Önceki vardiya kontrolü
-                if ($digerBitis <= $baslangicZamani) {
-                    $araSure = $baslangicZamani - $digerBitis;
-                    if ($araSure < $minimumSure) {
-                        return [
-                            'uygun' => false,
-                            'mesaj' => 'İki vardiya arası en az 11 saat olmalıdır.',
-                            'onceki_vardiya' => [
-                                'id' => $vardiya['id'],
-                                'bitis' => date('Y-m-d H:i', $digerBitis)
-                            ]
-                        ];
-                    }
-                }
-
-                // Sonraki vardiya kontrolü
-                if ($digerBaslangic >= $bitisZamani) {
-                    $araSure = $digerBaslangic - $bitisZamani;
-                    if ($araSure < $minimumSure) {
-                        return [
-                            'uygun' => false,
-                            'mesaj' => 'İki vardiya arası en az 11 saat olmalıdır.',
-                            'sonraki_vardiya' => [
-                                'id' => $vardiya['id'],
-                                'baslangic' => date('Y-m-d H:i', $digerBaslangic)
-                            ]
-                        ];
-                    }
+            // Sonraki vardiya kontrolü
+            if ($digerBaslangic >= $bitisZamani) {
+                $araSure = $digerBaslangic - $bitisZamani;
+                if ($araSure < $minimumSure) {
+                    return [
+                        'uygun' => false,
+                        'mesaj' => 'İki vardiya arası en az 11 saat olmalıdır.',
+                        'sonraki_vardiya' => [
+                            'id' => $vardiya['id'],
+                            'baslangic' => date('Y-m-d H:i', $digerBaslangic)
+                        ]
+                    ];
                 }
             }
         }
 
         return ['uygun' => true];
-    }
-
-    /**
-     * JSON dosyasına veri yazma
-     */
-    private function veriYaz($data)
-    {
-        file_put_contents('personel.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 }

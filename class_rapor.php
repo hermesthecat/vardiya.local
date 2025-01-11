@@ -5,39 +5,72 @@
  */
 class Rapor
 {
+    private $db;
+    private $islemLog;
+    private static $instance = null;
+
+    private function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->islemLog = IslemLog::getInstance();
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * Aylık çalışma saatleri raporu
      */
     public function aylikCalisma($ay, $yil)
     {
-        $data = veriOku();
-        $rapor = [];
-        $vardiyaTurleri = vardiyaTurleriniGetir();
+        $baslangicTimestamp = mktime(0, 0, 0, $ay, 1, $yil);
+        $bitisTimestamp = mktime(23, 59, 59, $ay + 1, 0, $yil);
 
-        foreach ($data['personel'] as $personel) {
+        // Personel listesini al
+        $sql = "SELECT id, CONCAT(ad, ' ', soyad) as personel FROM personel ORDER BY ad, soyad";
+        $personeller = $this->db->fetchAll($sql);
+
+        // Vardiya türlerini al
+        $sql = "SELECT id, etiket, baslangic, bitis FROM vardiya_turleri ORDER BY id";
+        $vardiyaTurleri = $this->db->fetchAll($sql);
+
+        $rapor = [];
+        foreach ($personeller as $personel) {
             $vardiyalar = [];
-            foreach ($vardiyaTurleri as $id => $vardiya) {
-                $vardiyalar[$id] = 0;
+            foreach ($vardiyaTurleri as $vardiya) {
+                $vardiyalar[$vardiya['id']] = 0;
             }
 
             $rapor[$personel['id']] = [
-                'personel' => $personel['ad'] . ' ' . $personel['soyad'],
+                'personel' => $personel['personel'],
                 'toplam_saat' => 0,
                 'vardiyalar' => $vardiyalar
             ];
         }
 
-        $baslangicTimestamp = strtotime(sprintf('%04d-%02d-01', $yil, $ay));
-        $bitisTimestamp = strtotime(date('Y-m-t', $baslangicTimestamp));
+        // Vardiyaları al ve hesapla
+        $sql = "SELECT v.personel_id, v.vardiya_turu, vt.baslangic, vt.bitis 
+                FROM vardiyalar v 
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id 
+                WHERE v.tarih BETWEEN ? AND ?";
+        
+        $vardiyalar = $this->db->fetchAll($sql, [$baslangicTimestamp, $bitisTimestamp]);
 
-        foreach ($data['vardiyalar'] as $vardiya) {
-            $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-
-            if ($vardiyaTarihi >= $baslangicTimestamp && $vardiyaTarihi <= $bitisTimestamp) {
-                $saatler = vardiyaSaatleriHesapla($vardiya['vardiya_turu']);
-                $rapor[$vardiya['personel_id']]['toplam_saat'] += $saatler['sure'];
-                $rapor[$vardiya['personel_id']]['vardiyalar'][$vardiya['vardiya_turu']]++;
+        foreach ($vardiyalar as $vardiya) {
+            $baslangic = strtotime($vardiya['baslangic']);
+            $bitis = strtotime($vardiya['bitis']);
+            if ($bitis < $baslangic) {
+                $bitis = strtotime('+1 day', $bitis);
             }
+            $sure = ($bitis - $baslangic) / 3600;
+
+            $rapor[$vardiya['personel_id']]['toplam_saat'] += $sure;
+            $rapor[$vardiya['personel_id']]['vardiyalar'][$vardiya['vardiya_turu']]++;
         }
 
         return $rapor;
@@ -49,11 +82,14 @@ class Rapor
     public function excelOlustur($ay, $yil)
     {
         $rapor = $this->aylikCalisma($ay, $yil);
-        $vardiyaTurleri = vardiyaTurleriniGetir();
+        
+        // Vardiya türlerini al
+        $sql = "SELECT id, etiket FROM vardiya_turleri ORDER BY id";
+        $vardiyaTurleri = $this->db->fetchAll($sql);
 
         // Başlık satırı
         $basliklar = ['Personel', 'Toplam Saat'];
-        foreach ($vardiyaTurleri as $id => $vardiya) {
+        foreach ($vardiyaTurleri as $vardiya) {
             $basliklar[] = $vardiya['etiket'] . ' Vardiyası';
         }
         $csv = implode(',', array_map([$this, 'strPutCsv'], $basliklar)) . "\n";
@@ -64,12 +100,13 @@ class Rapor
                 $this->strPutCsv($personelRapor['personel']),
                 number_format($personelRapor['toplam_saat'], 2)
             ];
-            foreach ($vardiyaTurleri as $id => $vardiya) {
-                $satir[] = $personelRapor['vardiyalar'][$id];
+            foreach ($vardiyaTurleri as $vardiya) {
+                $satir[] = $personelRapor['vardiyalar'][$vardiya['id']];
             }
             $csv .= implode(',', $satir) . "\n";
         }
 
+        $this->islemLog->logKaydet('excel_rapor', "Excel raporu oluşturuldu: $ay/$yil");
         return $csv;
     }
 
@@ -91,8 +128,12 @@ class Rapor
     public function pdfIcinHtmlOlustur($ay, $yil)
     {
         $rapor = $this->aylikCalisma($ay, $yil);
-        $vardiyaTurleri = vardiyaTurleriniGetir();
-        $ayAdi = tarihFormatla(mktime(0, 0, 0, $ay, 1, $yil), 'uzun');
+        
+        // Vardiya türlerini al
+        $sql = "SELECT id, etiket, renk FROM vardiya_turleri ORDER BY id";
+        $vardiyaTurleri = $this->db->fetchAll($sql);
+        
+        $ayAdi = date('F Y', mktime(0, 0, 0, $ay, 1, $yil));
 
         $html = '<h1>Aylık Çalışma Raporu - ' . $ayAdi . '</h1>';
         $html .= '<table border="1" cellpadding="5" cellspacing="0" width="100%">';
@@ -114,11 +155,11 @@ class Rapor
             $html .= '<td>' . htmlspecialchars($personelRapor['personel']) . '</td>';
             $html .= '<td>' . number_format($personelRapor['toplam_saat'], 2) . ' Saat</td>';
 
-            foreach ($vardiyaTurleri as $id => $vardiya) {
+            foreach ($vardiyaTurleri as $vardiya) {
                 $html .= sprintf(
                     '<td style="text-align: center; background-color: %s">%d</td>',
                     $this->renkParlaklikAyarla($vardiya['renk'], 0.9),
-                    $personelRapor['vardiyalar'][$id]
+                    $personelRapor['vardiyalar'][$vardiya['id']]
                 );
             }
 
@@ -126,6 +167,8 @@ class Rapor
         }
 
         $html .= '</table>';
+        
+        $this->islemLog->logKaydet('pdf_rapor', "PDF raporu oluşturuldu: $ay/$yil");
         return $html;
     }
 
@@ -156,90 +199,85 @@ class Rapor
      */
     public function vardiyaRaporuGetir($baslangic_tarihi, $bitis_tarihi, $personel_id = null, $vardiya_turu = null)
     {
-        $data = veriOku();
-        $vardiyalar = $data['vardiyalar'] ?? [];
-        $personeller = $data['personel'] ?? [];
-        $vardiyaTurleri = vardiyaTurleriniGetir();
+        $params = [$baslangic_tarihi, $bitis_tarihi];
+        $where = "v.tarih BETWEEN ? AND ?";
+        
+        if ($personel_id !== null) {
+            $where .= " AND v.personel_id = ?";
+            $params[] = $personel_id;
+        }
+        
+        if ($vardiya_turu !== null) {
+            $where .= " AND v.vardiya_turu = ?";
+            $params[] = $vardiya_turu;
+        }
 
-        // Filtreleme
-        $filtrelenmisVardiyalar = array_filter($vardiyalar, function ($vardiya) use ($baslangic_tarihi, $bitis_tarihi, $personel_id, $vardiya_turu) {
-            if ($vardiya['tarih'] < $baslangic_tarihi || $vardiya['tarih'] > $bitis_tarihi) {
-                return false;
-            }
-            if ($personel_id !== null && $vardiya['personel_id'] !== $personel_id) {
-                return false;
-            }
-            if ($vardiya_turu !== null && $vardiya['vardiya_turu'] !== $vardiya_turu) {
-                return false;
-            }
-            return true;
-        });
+        // Vardiyaları getir
+        $sql = "SELECT v.*, vt.etiket as vardiya_turu_adi, vt.baslangic, vt.bitis,
+                p.ad, p.soyad, vt.renk
+                FROM vardiyalar v 
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id
+                LEFT JOIN personel p ON v.personel_id = p.id
+                WHERE $where
+                ORDER BY v.tarih ASC";
+                
+        $vardiyalar = $this->db->fetchAll($sql, $params);
 
         // Vardiya dağılımını hesapla
         $vardiyaDagilimi = [];
-        foreach ($filtrelenmisVardiyalar as $vardiya) {
-            $tur = $vardiya['vardiya_turu'];
-            if (!isset($vardiyaDagilimi[$tur])) {
-                $vardiyaDagilimi[$tur] = [
-                    'etiket' => $vardiyaTurleri[$tur]['etiket'],
+        $gunlukDagilim = [];
+        $toplamSaat = 0;
+        $personelIds = [];
+
+        foreach ($vardiyalar as $vardiya) {
+            // Vardiya türü dağılımı
+            if (!isset($vardiyaDagilimi[$vardiya['vardiya_turu']])) {
+                $vardiyaDagilimi[$vardiya['vardiya_turu']] = [
+                    'etiket' => $vardiya['vardiya_turu_adi'],
                     'sayi' => 0
                 ];
             }
-            $vardiyaDagilimi[$tur]['sayi']++;
-        }
+            $vardiyaDagilimi[$vardiya['vardiya_turu']]['sayi']++;
 
-        // Günlük dağılımı hesapla
-        $gunlukDagilim = [];
-        $current = strtotime($baslangic_tarihi);
-        $end = strtotime($bitis_tarihi);
-        while ($current <= $end) {
-            $tarih = date('Y-m-d', $current);
-            $gunlukDagilim[$tarih] = [
-                'tarih' => date('d.m.Y', $current),
-                'sayi' => 0
-            ];
-            $current = strtotime('+1 day', $current);
-        }
+            // Günlük dağılım
+            $tarih = date('Y-m-d', $vardiya['tarih']);
+            if (!isset($gunlukDagilim[$tarih])) {
+                $gunlukDagilim[$tarih] = [
+                    'tarih' => date('d.m.Y', $vardiya['tarih']),
+                    'sayi' => 0
+                ];
+            }
+            $gunlukDagilim[$tarih]['sayi']++;
 
-        foreach ($filtrelenmisVardiyalar as $vardiya) {
-            $gunlukDagilim[$vardiya['tarih']]['sayi']++;
-        }
-
-        // Toplam saatleri hesapla
-        $toplamSaat = 0;
-        foreach ($filtrelenmisVardiyalar as $vardiya) {
-            $tur = $vardiyaTurleri[$vardiya['vardiya_turu']];
-            $baslangic = strtotime($tur['baslangic']);
-            $bitis = strtotime($tur['bitis']);
+            // Toplam saat hesapla
+            $baslangic = strtotime($vardiya['baslangic']);
+            $bitis = strtotime($vardiya['bitis']);
             if ($bitis < $baslangic) {
                 $bitis = strtotime('+1 day', $bitis);
             }
             $toplamSaat += ($bitis - $baslangic) / 3600;
+
+            // Personel sayısı için
+            $personelIds[$vardiya['personel_id']] = true;
         }
 
         // Detaylı vardiya listesi
-        $detayliVardiyalar = [];
-        foreach ($filtrelenmisVardiyalar as $vardiya) {
-            $personel = array_filter($personeller, function ($p) use ($vardiya) {
-                return $p['id'] === $vardiya['personel_id'];
-            });
-            $personel = reset($personel);
-            $tur = $vardiyaTurleri[$vardiya['vardiya_turu']];
-
-            $detayliVardiyalar[] = [
+        $detayliVardiyalar = array_map(function($vardiya) {
+            return [
                 'tarih' => $vardiya['tarih'],
-                'personel_adi' => $personel['ad'] . ' ' . $personel['soyad'],
-                'vardiya_turu' => $tur['etiket'],
-                'baslangic' => $tur['baslangic'],
-                'bitis' => $tur['bitis'],
+                'personel_adi' => $vardiya['ad'] . ' ' . $vardiya['soyad'],
+                'vardiya_turu' => $vardiya['vardiya_turu_adi'],
+                'baslangic' => $vardiya['baslangic'],
+                'bitis' => $vardiya['bitis'],
                 'durum' => $vardiya['durum'] ?? 'Normal'
             ];
-        }
+        }, $vardiyalar);
 
-        // Sonuçları döndür
+        $this->islemLog->logKaydet('vardiya_rapor', "Vardiya raporu oluşturuldu: " . date('d.m.Y', $baslangic_tarihi) . " - " . date('d.m.Y', $bitis_tarihi));
+
         return [
-            'toplam_vardiya' => count($filtrelenmisVardiyalar),
-            'toplam_personel' => count(array_unique(array_column($filtrelenmisVardiyalar, 'personel_id'))),
+            'toplam_vardiya' => count($vardiyalar),
+            'toplam_personel' => count($personelIds),
             'toplam_saat' => round($toplamSaat),
             'vardiya_dagilimi' => array_values($vardiyaDagilimi),
             'gunluk_dagilim' => array_values($gunlukDagilim),

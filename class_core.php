@@ -1,77 +1,119 @@
 <?php
 
 /**
- * Core sınıfı - Temel sistem fonksiyonlarını içerir
+ * Core sınıfı - Temel işlevleri yönetir
  * PHP 7.4+
  */
 class Core
 {
+    private $db;
+    private $islemLog;
+    private static $instance = null;
+
+    private function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->islemLog = IslemLog::getInstance();
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * Takvim oluşturma
      */
     public function takvimOlustur($ay, $yil)
     {
         $ilkGun = mktime(0, 0, 0, $ay, 1, $yil);
-        $ayinIlkGunu = date('w', $ilkGun);
-        $aydakiGunSayisi = date('t', $ilkGun);
+        $ayinGunSayisi = date('t', $ilkGun);
+        $ilkGununHaftaninGunu = date('w', $ilkGun);
+        $sonGun = mktime(0, 0, 0, $ay, $ayinGunSayisi, $yil);
 
-        $output = '<table class="takvim-tablo">';
-        $output .= '<tr>
-            <th>Pzr</th>
-            <th>Pzt</th>
-            <th>Sal</th>
-            <th>Çar</th>
-            <th>Per</th>
-            <th>Cum</th>
-            <th>Cmt</th>
-        </tr>';
+        // Vardiyaları getir
+        $sql = "SELECT v.*, p.ad, p.soyad, vt.etiket as vardiya_turu_etiket, vt.renk 
+                FROM vardiyalar v 
+                LEFT JOIN personel p ON v.personel_id = p.id 
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id 
+                WHERE MONTH(FROM_UNIXTIME(v.tarih)) = ? AND YEAR(FROM_UNIXTIME(v.tarih)) = ?";
 
-        // Boş günleri ekle
-        $output .= '<tr>';
-        for ($i = 0; $i < $ayinIlkGunu; $i++) {
-            $output .= '<td class="bos"></td>';
+        $vardiyalar = $this->db->fetchAll($sql, [$ay, $yil]);
+        $vardiyaGruplari = [];
+
+        foreach ($vardiyalar as $vardiya) {
+            $gun = date('j', $vardiya['tarih']);
+            if (!isset($vardiyaGruplari[$gun])) {
+                $vardiyaGruplari[$gun] = [];
+            }
+            $vardiyaGruplari[$gun][] = $vardiya;
+        }
+
+        $takvim = '<table class="takvim">';
+        $takvim .= '<tr><th>Pzt</th><th>Sal</th><th>Çar</th><th>Per</th><th>Cum</th><th>Cmt</th><th>Paz</th></tr>';
+        $takvim .= '<tr>';
+
+        // Ayın ilk gününe kadar boş hücreler ekle
+        $ilkGununHaftaninGunu = ($ilkGununHaftaninGunu == 0) ? 7 : $ilkGununHaftaninGunu;
+        for ($i = 1; $i < $ilkGununHaftaninGunu; $i++) {
+            $takvim .= '<td class="bos"></td>';
         }
 
         // Günleri ekle
-        $gunSayaci = $ayinIlkGunu;
-        for ($gun = 1; $gun <= $aydakiGunSayisi; $gun++) {
-            if ($gunSayaci % 7 === 0 && $gun !== 1) {
-                $output .= '</tr><tr>';
+        for ($gun = 1; $gun <= $ayinGunSayisi; $gun++) {
+            $gunTimestamp = mktime(0, 0, 0, $ay, $gun, $yil);
+            $class = [];
+
+            // Bugün kontrolü
+            if (date('Y-m-d', $gunTimestamp) === date('Y-m-d')) {
+                $class[] = 'bugun';
             }
 
-            $gunTimestamp = mktime(0, 0, 0, $ay, $gun, $yil);
-            $vardiyalar = gunlukVardiyalariGetir($gunTimestamp);
+            // Hafta sonu kontrolü
+            if (date('N', $gunTimestamp) >= 6) {
+                $class[] = 'haftasonu';
+            }
 
-            $output .= sprintf('<td class="gun" data-tarih="%s">', date('Y-m-d', $gunTimestamp));
-            $output .= '<div class="gun-baslik">' . $gun . '</div>';
+            $takvim .= sprintf('<td class="%s">', implode(' ', $class));
+            $takvim .= '<div class="gun">' . $gun . '</div>';
 
-            if (!empty($vardiyalar)) {
-                $output .= '<div class="vardiyalar">';
-                foreach ($vardiyalar as $vardiya) {
-                    $output .= sprintf(
-                        '<a href="vardiya.php?vardiya_id=%s" class="vardiya-item %s" title="%s - %s">%s</a>',
-                        $vardiya['id'],
-                        $vardiya['durum'],
-                        htmlspecialchars($vardiya['personel']),
-                        htmlspecialchars($vardiya['vardiya_turu']),
-                        htmlspecialchars($vardiya['vardiya'])
+            // Vardiyaları ekle
+            if (isset($vardiyaGruplari[$gun])) {
+                $takvim .= '<div class="vardiyalar">';
+                foreach ($vardiyaGruplari[$gun] as $vardiya) {
+                    $takvim .= sprintf(
+                        '<div class="vardiya" style="background-color: %s" title="%s %s - %s">%s</div>',
+                        $vardiya['renk'],
+                        $vardiya['ad'],
+                        $vardiya['soyad'],
+                        $vardiya['vardiya_turu_etiket'],
+                        $vardiya['vardiya_turu_etiket'][0]
                     );
                 }
-                $output .= '</div>';
+                $takvim .= '</div>';
             }
 
-            $output .= '</td>';
-            $gunSayaci++;
+            $takvim .= '</td>';
+
+            // Haftanın son günü kontrolü
+            if (date('N', $gunTimestamp) == 7) {
+                $takvim .= '</tr><tr>';
+            }
         }
 
-        // Kalan boş günleri ekle
-        while ($gunSayaci % 7 !== 0) {
-            $output .= '<td class="bos"></td>';
-            $gunSayaci++;
+        // Son haftanın kalan günlerini boş hücrelerle doldur
+        $sonGununHaftaninGunu = date('N', $sonGun);
+        if ($sonGununHaftaninGunu != 7) {
+            for ($i = $sonGununHaftaninGunu; $i < 7; $i++) {
+                $takvim .= '<td class="bos"></td>';
+            }
         }
 
-        $output .= '</tr></table>';
-        return $output;
+        $takvim .= '</tr></table>';
+        return $takvim;
     }
 
     /**
@@ -79,71 +121,36 @@ class Core
      */
     public function kullaniciGiris($email, $sifre)
     {
-        try {
-            // E-posta formatı kontrolü
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception('Geçersiz e-posta formatı.');
-            }
-
-            $data = veriOku();
-
-            // Personel dizisi kontrolü
-            if (!isset($data['personel']) || empty($data['personel'])) {
-                throw new Exception('Sistemde kayıtlı personel bulunmuyor.');
-            }
-
-            // Kullanıcı arama ve doğrulama
-            foreach ($data['personel'] as $personel) {
-                if ($personel['email'] === $email) {
-                    // Şifre kontrolü
-                    if (!isset($personel['sifre'])) {
-                        throw new Exception('Kullanıcı şifresi tanımlanmamış.');
-                    }
-
-                    if ($sifre === $personel['sifre']) {
-                        // Varolan session'ı temizle
-                        if (session_status() === PHP_SESSION_ACTIVE) {
-                            session_destroy();
-                        }
-
-                        // Yeni session başlat
-                        session_start();
-
-                        // Session'a kullanıcı bilgilerini kaydet
-                        $_SESSION['kullanici_id'] = $personel['id'];
-                        $_SESSION['email'] = $personel['email'];
-                        $_SESSION['rol'] = $personel['yetki'];
-                        $_SESSION['ad_soyad'] = $personel['ad'] . ' ' . $personel['soyad'];
-                        $_SESSION['giris_zamani'] = time();
-
-                        // Tercihler varsa kaydet
-                        if (isset($personel['tercihler'])) {
-                            $_SESSION['tercihler'] = $personel['tercihler'];
-                        }
-
-                        // İzin hakları varsa kaydet
-                        if (isset($personel['izin_haklari'])) {
-                            $_SESSION['izin_haklari'] = $personel['izin_haklari'];
-                        }
-
-                        // Giriş logunu kaydet
-                        islemLogKaydet('giris', 'Başarılı giriş: ' . $personel['email']);
-
-                        return true;
-                    } else {
-                        throw new Exception('Hatalı şifre.');
-                    }
-                }
-            }
-
-            throw new Exception('Bu e-posta adresi ile kayıtlı personel bulunamadı.');
-        } catch (Exception $e) {
-            // Başarısız giriş logunu kaydet
-            if (isset($email)) {
-                islemLogKaydet('giris_hata', 'Başarısız giriş denemesi: ' . $email . ' - ' . $e->getMessage());
-            }
-            throw $e;
+        // E-posta formatı kontrolü
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Geçersiz e-posta formatı.');
         }
+
+        $sql = "SELECT * FROM personel WHERE email = ? LIMIT 1";
+        $kullanici = $this->db->fetch($sql, [$email]);
+
+        if (!$kullanici) {
+            throw new Exception('Kullanıcı bulunamadı.');
+        }
+
+        if (!password_verify($sifre, $kullanici['sifre'])) {
+            $this->islemLog->logKaydet('giris_basarisiz', "Başarısız giriş denemesi: $email");
+            throw new Exception('Hatalı şifre.');
+        }
+
+        // Session'a kullanıcı bilgilerini kaydet
+        $_SESSION['kullanici_id'] = $kullanici['id'];
+        $_SESSION['ad_soyad'] = $kullanici['ad'] . ' ' . $kullanici['soyad'];
+        $_SESSION['email'] = $kullanici['email'];
+        $_SESSION['rol'] = $kullanici['yetki'];
+        $_SESSION['giris_zamani'] = time();
+
+        // Son giriş zamanını güncelle
+        $sql = "UPDATE personel SET son_giris = ? WHERE id = ?";
+        $this->db->query($sql, [time(), $kullanici['id']]);
+
+        $this->islemLog->logKaydet('giris_basarili', "Başarılı giriş: {$kullanici['email']}");
+        return true;
     }
 
     /**
@@ -151,8 +158,19 @@ class Core
      */
     public function kullaniciCikis()
     {
-        islemLogKaydet('cikis', 'Kullanıcı çıkışı yapıldı');
+        if (isset($_SESSION['kullanici_id'])) {
+            $this->islemLog->logKaydet('cikis', "Kullanıcı çıkış yaptı: {$_SESSION['email']}");
+        }
+
+        // Session'ı temizle
+        session_unset();
         session_destroy();
+
+        // Yeni session başlat
+        session_start();
+        session_regenerate_id(true);
+
+        return true;
     }
 
     /**
@@ -160,23 +178,57 @@ class Core
      */
     public function sifreDegistir($kullaniciId, $eskiSifre, $yeniSifre)
     {
-        $data = veriOku();
+        $sql = "SELECT sifre FROM personel WHERE id = ? LIMIT 1";
+        $kullanici = $this->db->fetch($sql, [$kullaniciId]);
 
-        foreach ($data['personel'] as &$kullanici) {
-            if ($kullanici['id'] === $kullaniciId) {
-                if ($kullanici['sifre'] !== $eskiSifre) {
-                    throw new Exception('Mevcut şifre hatalı.');
-                }
-
-                $kullanici['sifre'] = $yeniSifre;
-                veriYaz($data);
-
-                islemLogKaydet('sifre_degistir', 'Kullanıcı şifresi değiştirildi');
-                return true;
-            }
+        if (!$kullanici) {
+            throw new Exception('Kullanıcı bulunamadı.');
         }
 
-        throw new Exception('Kullanıcı bulunamadı.');
+        if (!password_verify($eskiSifre, $kullanici['sifre'])) {
+            throw new Exception('Mevcut şifre hatalı.');
+        }
+
+        // Şifre karmaşıklık kontrolü
+        if (strlen($yeniSifre) < 8) {
+            throw new Exception('Şifre en az 8 karakter olmalıdır.');
+        }
+
+        if (!preg_match('/[A-Z]/', $yeniSifre)) {
+            throw new Exception('Şifre en az bir büyük harf içermelidir.');
+        }
+
+        if (!preg_match('/[a-z]/', $yeniSifre)) {
+            throw new Exception('Şifre en az bir küçük harf içermelidir.');
+        }
+
+        if (!preg_match('/[0-9]/', $yeniSifre)) {
+            throw new Exception('Şifre en az bir rakam içermelidir.');
+        }
+
+        // Şifreyi güncelle
+        $yeniSifreHash = password_hash($yeniSifre, PASSWORD_DEFAULT);
+        $sql = "UPDATE personel SET sifre = ?, sifre_degistirme_tarihi = ? WHERE id = ?";
+        $this->db->query($sql, [$yeniSifreHash, time(), $kullaniciId]);
+
+        $this->islemLog->logKaydet('sifre_degistir', "Şifre değiştirildi: Kullanıcı ID: $kullaniciId");
+        return true;
+    }
+
+    /**
+     * Yetki kontrolü
+     */
+    public function yetkiKontrol($gerekliRoller = ['admin'])
+    {
+        if (!isset($_SESSION['kullanici_id']) || !isset($_SESSION['rol'])) {
+            return false;
+        }
+
+        if (in_array($_SESSION['rol'], $gerekliRoller)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -188,9 +240,6 @@ class Core
             $timestamp = strtotime($timestamp);
         }
 
-        $tarih = date_create(date('Y-m-d H:i:s', $timestamp));
-
-        $gunler = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
         $aylar = [
             'Ocak',
             'Şubat',
@@ -206,42 +255,46 @@ class Core
             'Aralık'
         ];
 
+        $gunler = [
+            'Pazartesi',
+            'Salı',
+            'Çarşamba',
+            'Perşembe',
+            'Cuma',
+            'Cumartesi',
+            'Pazar'
+        ];
+
+        $gun = date('j', $timestamp);
+        $ay = $aylar[date('n', $timestamp) - 1];
+        $yil = date('Y', $timestamp);
+        $haftaninGunu = $gunler[date('N', $timestamp) - 1];
+
         switch ($format) {
             case 'kisa':
-                return date_format($tarih, 'd.m.Y');
+                return sprintf('%02d.%02d.%04d', $gun, date('m', $timestamp), $yil);
+
             case 'uzun':
-                return date_format($tarih, 'j') . ' ' . $aylar[date_format($tarih, 'n') - 1] . ' ' . date_format($tarih, 'Y');
+                return "$gun $ay $yil";
+
             case 'tam':
-                return $gunler[date_format($tarih, 'w')] . ', ' . date_format($tarih, 'j') . ' ' . $aylar[date_format($tarih, 'n') - 1] . ' ' . date_format($tarih, 'Y');
+                return "$gun $ay $yil, $haftaninGunu";
+
             case 'saat':
-                return date_format($tarih, 'H:i');
+                return date('H:i', $timestamp);
+
             case 'tam_saat':
-                return date_format($tarih, 'j') . ' ' . $aylar[date_format($tarih, 'n') - 1] . ' ' . date_format($tarih, 'Y') . ' ' . date_format($tarih, 'H:i');
-            case 'veritabani':
-                return date_format($tarih, 'Y-m-d H:i:s');
-            case 'gun':
-                return $gunler[date_format($tarih, 'w')];
-            case 'ay':
-                return $aylar[date_format($tarih, 'n') - 1];
+                return sprintf(
+                    '%02d.%02d.%04d %02d:%02d',
+                    $gun,
+                    date('m', $timestamp),
+                    $yil,
+                    date('H', $timestamp),
+                    date('i', $timestamp)
+                );
+
             default:
-                return date_format($tarih, 'd.m.Y');
+                return date($format, $timestamp);
         }
-    }
-
-    /**
-     * Yetki kontrolü
-     */
-    public function yetkiKontrol($gerekliRoller = ['admin'])
-    {
-        if (!isset($_SESSION['kullanici_id']) || !isset($_SESSION['rol'])) {
-            header('Location: giris.php');
-            exit;
-        }
-
-        if (!in_array($_SESSION['rol'], $gerekliRoller)) {
-            throw new Exception('Bu işlem için yetkiniz bulunmuyor.');
-        }
-
-        return true;
     }
 }

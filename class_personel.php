@@ -6,451 +6,246 @@
  */
 class Personel
 {
+    private $db;
+    private $islemLog;
+    private static $instance = null;
+
+    private function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->islemLog = IslemLog::getInstance();
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * Tüm personelleri getir
      */
     public function tumPersonelleriGetir()
     {
-        $data = veriOku();
-        return $data['personel'];
+        $sql = "SELECT * FROM personel ORDER BY ad, soyad";
+        return $this->db->fetchAll($sql);
     }
 
     /**
-     * Personel vardiya bilgilerini getir
+     * Personel vardiya bilgisini getir
      */
     public function vardiyaBilgisiGetir($personelId)
     {
-        $data = veriOku();
-        $toplam = 0;
-        $sonVardiyaTimestamp = null;
+        $sql = "SELECT v.*, vt.etiket as vardiya_turu_adi, vt.renk 
+                FROM vardiyalar v 
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id 
+                WHERE v.personel_id = ? 
+                ORDER BY v.tarih DESC 
+                LIMIT 10";
 
-        foreach ($data['vardiyalar'] as $vardiya) {
-            if ($vardiya['personel_id'] === $personelId) {
-                $toplam++;
-                $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                if (!$sonVardiyaTimestamp || $vardiyaTarihi > $sonVardiyaTimestamp) {
-                    $sonVardiyaTimestamp = $vardiyaTarihi;
-                }
-            }
-        }
-
-        return [
-            'toplam_vardiya' => $toplam,
-            'son_vardiya' => $sonVardiyaTimestamp
-        ];
+        return $this->db->fetchAll($sql, [$personelId]);
     }
 
     /**
-     * Personel silme
+     * Personel sil
      */
     public function sil($personelId)
     {
-        $data = veriOku();
-
-        // Personelin vardiyalarını kontrol et
-        foreach ($data['vardiyalar'] as $vardiya) {
-            if ($vardiya['personel_id'] === $personelId) {
-                throw new Exception('Bu personele ait vardiyalar bulunduğu için silinemez. Önce vardiyaları silmelisiniz.');
-            }
-        }
-
-        // Personeli sil
-        $data['personel'] = array_filter($data['personel'], function ($personel) use ($personelId) {
-            return $personel['id'] !== $personelId;
-        });
-
-        veriYaz($data);
-    }
-
-    /**
-     * Yeni personel ekleme
-     */
-    public function ekle($ad, $soyad, $email, $telefon = '', $yetki = 'personel')
-    {
-        $data = veriOku();
-
-        // E-posta kontrolü
-        foreach ($data['personel'] as $personel) {
-            if ($personel['email'] === $email) {
-                throw new Exception('Bu e-posta adresi zaten kullanılıyor.');
-            }
-        }
-
-        $yeniPersonel = [
-            'id' => uniqid(),
-            'ad' => $ad,
-            'soyad' => $soyad,
-            'email' => $email,
-            'telefon' => $telefon,
-            'yetki' => $yetki,
-            'sifre' => '123456', // Varsayılan şifre
-            'tercihler' => [
-                'bildirimler' => true,
-                'tercih_edilen_vardiyalar' => [],
-                'tercih_edilmeyen_gunler' => []
-            ],
-            'izin_haklari' => [
-                'yillik' => [
-                    'toplam' => 14,
-                    'kullanilan' => 0,
-                    'kalan' => 14,
-                    'son_guncelleme' => time()
-                ],
-                'mazeret' => [
-                    'toplam' => 5,
-                    'kullanilan' => 0,
-                    'kalan' => 5
-                ],
-                'hastalik' => [
-                    'kullanilan' => 0
-                ]
-            ]
-        ];
-
-        $data['personel'][] = $yeniPersonel;
-        veriYaz($data);
-
-        islemLogKaydet('personel_ekle', "Yeni personel eklendi: $ad $soyad ($email)");
-        return $yeniPersonel['id'];
-    }
-
-    /**
-     * Personel listesini getirme (select için)
-     */
-    public function listesiGetir()
-    {
-        $data = veriOku();
-        $output = '';
-        foreach ($data['personel'] as $personel) {
-            $output .= sprintf(
-                '<option value="%s">%s %s</option>',
-                $personel['id'],
-                htmlspecialchars($personel['ad']),
-                htmlspecialchars($personel['soyad'])
-            );
-        }
-        return $output;
-    }
-
-    /**
-     * Personelin izinlerini getir
-     */
-    public function izinleriniGetir($personelId)
-    {
-        $data = veriOku();
-        $izinler = [];
-
-        foreach ($data['izinler'] as $izin) {
-            if ($izin['personel_id'] === $personelId) {
-                $izinler[] = $izin;
-            }
-        }
-
-        return $izinler;
-    }
-
-    /**
-     * Personelin izin taleplerini getir
-     */
-    public function izinTalepleriniGetir($personelId)
-    {
-        $data = veriOku();
-        $talepler = [];
-
-        foreach ($data['izin_talepleri'] as $talep) {
-            if ($talep['personel_id'] === $personelId) {
-                $talepler[] = $talep;
-            }
-        }
-
-        return $talepler;
-    }
-
-    /**
-     * Personel düzenleme
-     */
-    public function duzenle($personelId, $ad, $soyad, $notlar)
-    {
-        $data = veriOku();
-
-        foreach ($data['personel'] as &$personel) {
-            if ($personel['id'] === $personelId) {
-                $personel['ad'] = $ad;
-                $personel['soyad'] = $soyad;
-                $personel['notlar'] = $notlar;
-                break;
-            }
-        }
-
-        veriYaz($data);
-    }
-
-    /**
-     * Personel bazlı vardiya dağılımı
-     */
-    public function vardiyaDagilimi($baslangicTarih, $bitisTarih)
-    {
-        // Tarihleri timestamp'e çevir
-        $baslangicTimestamp = is_numeric($baslangicTarih) ? $baslangicTarih : strtotime($baslangicTarih);
-        $bitisTimestamp = is_numeric($bitisTarih) ? $bitisTarih : strtotime($bitisTarih);
-
-        $data = veriOku();
-        $vardiyaTurleri = vardiyaTurleriniGetir();
-        $dagilim = [];
-
-        foreach ($data['personel'] as $personel) {
-            $vardiyalar = [];
-            foreach ($vardiyaTurleri as $id => $vardiya) {
-                $vardiyalar[$id] = [
-                    'adet' => 0,
-                    'etiket' => $vardiya['etiket'],
-                    'renk' => $vardiya['renk']
-                ];
-            }
-
-            $dagilim[$personel['id']] = [
-                'personel' => $personel['ad'] . ' ' . $personel['soyad'],
-                'vardiyalar' => $vardiyalar,
-                'toplam' => 0
-            ];
-        }
-
-        foreach ($data['vardiyalar'] as $vardiya) {
-            $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            if ($vardiyaTarihi >= $baslangicTimestamp && $vardiyaTarihi <= $bitisTimestamp) {
-                $dagilim[$vardiya['personel_id']]['vardiyalar'][$vardiya['vardiya_turu']]['adet']++;
-                $dagilim[$vardiya['personel_id']]['toplam']++;
-            }
-        }
-
-        return $dagilim;
-    }
-
-    /**
-     * Personel tercihlerini getir
-     */
-    public function tercihGetir($personelId)
-    {
-        $data = veriOku();
-
-        if (!isset($data['personel_tercihleri'])) {
-            return [
-                'tercih_edilen_vardiyalar' => [],
-                'tercih_edilmeyen_gunler' => [],
-                'max_ardisik_vardiya' => 5
-            ];
-        }
-
-        foreach ($data['personel_tercihleri'] as $tercih) {
-            if ($tercih['personel_id'] === $personelId) {
-                return $tercih['tercihler'];
-            }
-        }
-
-        return [
-            'tercih_edilen_vardiyalar' => [],
-            'tercih_edilmeyen_gunler' => [],
-            'max_ardisik_vardiya' => 5
-        ];
-    }
-
-    /**
-     * Personelin ay içindeki vardiya sayılarını hesapla
-     */
-    public function aylikVardiyaSayisi($personelId, $ay, $yil)
-    {
-        $data = veriOku();
-
         // Personel kontrolü
-        $personelBulundu = false;
-        $personelBilgisi = null;
-        foreach ($data['personel'] as $personel) {
-            if ($personel['id'] === $personelId) {
-                $personelBulundu = true;
-                $personelBilgisi = $personel;
-                break;
-            }
-        }
-
-        if (!$personelBulundu) {
+        $sql = "SELECT * FROM personel WHERE id = ?";
+        $personel = $this->db->fetch($sql, [$personelId]);
+        if (!$personel) {
             throw new Exception('Personel bulunamadı.');
         }
 
-        // Ay başı ve sonu
-        $ayBasi = mktime(0, 0, 0, $ay, 1, $yil);
-        $aySonu = mktime(23, 59, 59, $ay + 1, 0, $yil);
-
-        $vardiyaSayilari = [];
-        foreach ($data['vardiyalar'] as $vardiya) {
-            $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-            if ($vardiya['personel_id'] === $personelId && $vardiyaTarihi >= $ayBasi && $vardiyaTarihi <= $aySonu) {
-                $vardiyaSayilari[$vardiya['vardiya_turu']] = ($vardiyaSayilari[$vardiya['vardiya_turu']] ?? 0) + 1;
-            }
+        // Vardiya kontrolü
+        $sql = "SELECT COUNT(*) as adet FROM vardiyalar WHERE personel_id = ? AND tarih > ?";
+        $vardiya = $this->db->fetch($sql, [$personelId, time()]);
+        if ($vardiya['adet'] > 0) {
+            throw new Exception('Personelin gelecek vardiyaları bulunmaktadır. Önce vardiyaları silinmelidir.');
         }
 
-        return $vardiyaSayilari;
+        // İzin kontrolü
+        $sql = "SELECT COUNT(*) as adet FROM izinler WHERE personel_id = ? AND bitis_tarihi > ?";
+        $izin = $this->db->fetch($sql, [$personelId, time()]);
+        if ($izin['adet'] > 0) {
+            throw new Exception('Personelin aktif izinleri bulunmaktadır. Önce izinleri silinmelidir.');
+        }
+
+        // Personeli sil
+        $sql = "DELETE FROM personel WHERE id = ?";
+        $this->db->query($sql, [$personelId]);
+
+        $this->islemLog->logKaydet('personel_sil', "Personel silindi: {$personel['ad']} {$personel['soyad']}");
+        return true;
     }
 
     /**
-     * Kullanıcı oluştur
+     * Personel ekle
      */
-    public function kullaniciOlustur($ad, $soyad, $email, $sifre, $rol = 'personel', $telefon = '', $tercihler = null)
+    public function ekle($ad, $soyad, $email, $telefon = '', $yetki = 'personel')
     {
-        $data = veriOku();
-
-        // E-posta kontrolü
-        foreach ($data['personel'] as $personel) {
-            if ($personel['email'] === $email) {
-                throw new Exception('Bu e-posta adresi zaten kullanılıyor.');
-            }
+        // Email kontrolü
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Geçersiz e-posta formatı.');
         }
 
-        $yeniKullanici = [
-            'id' => uniqid(),
-            'ad' => $ad,
-            'soyad' => $soyad,
-            'email' => $email,
-            'sifre' => $sifre,
-            'rol' => $rol,
-            'telefon' => $telefon,
-            'tercihler' => $tercihler ?? [
-                'bildirimler' => true,
-                'tercih_edilen_vardiyalar' => [],
-                'tercih_edilmeyen_gunler' => []
-            ],
-            'olusturma_tarihi' => time(),
-            'guncelleme_tarihi' => time()
+        // Email benzersizlik kontrolü
+        $sql = "SELECT COUNT(*) as adet FROM personel WHERE email = ?";
+        $kontrol = $this->db->fetch($sql, [$email]);
+        if ($kontrol['adet'] > 0) {
+            throw new Exception('Bu e-posta adresi zaten kullanılıyor.');
+        }
+
+        // Varsayılan şifre oluştur
+        $sifre = substr(md5(uniqid()), 0, 8);
+        $sifreHash = password_hash($sifre, PASSWORD_DEFAULT);
+
+        // Personel ekle
+        $sql = "INSERT INTO personel (ad, soyad, email, telefon, yetki, sifre, ise_giris_tarihi) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        $params = [
+            $ad,
+            $soyad,
+            $email,
+            $telefon,
+            $yetki,
+            $sifreHash,
+            time()
         ];
 
-        $data['personel'][] = $yeniKullanici;
-        veriYaz($data);
+        $this->db->query($sql, $params);
+        $personelId = $this->db->lastInsertId();
 
-        islemLogKaydet('kullanici_olustur', "Yeni kullanıcı oluşturuldu: $ad $soyad ($email)");
-        return $yeniKullanici['id'];
+        $this->islemLog->logKaydet('personel_ekle', "Yeni personel eklendi: $ad $soyad");
+        
+        return [
+            'id' => $personelId,
+            'sifre' => $sifre // İlk şifreyi döndür
+        ];
     }
 
     /**
-     * Kullanıcı güncelle
+     * Personel listesini getir (select için)
      */
-    public function kullaniciGuncelle($kullaniciId, $ad, $soyad, $email, $rol = null, $telefon = null, $tercihler = null)
+    public function listesiGetir()
     {
-        $data = veriOku();
-        $kullaniciBulundu = false;
+        $sql = "SELECT id, ad, soyad FROM personel ORDER BY ad, soyad";
+        return $this->db->fetchAll($sql);
+    }
 
-        foreach ($data['personel'] as &$kullanici) {
-            if ($kullanici['id'] === $kullaniciId) {
-                $kullaniciBulundu = true;
+    /**
+     * Personel izinlerini getir
+     */
+    public function izinleriniGetir($personelId)
+    {
+        $sql = "SELECT i.*, it.ad as izin_turu_adi 
+                FROM izinler i 
+                LEFT JOIN izin_turleri it ON i.izin_turu = it.id 
+                WHERE i.personel_id = ? 
+                ORDER BY i.baslangic_tarihi DESC";
 
-                // E-posta değişmişse kontrol et
-                if ($email !== $kullanici['email']) {
-                    foreach ($data['personel'] as $digerKullanici) {
-                        if ($digerKullanici['email'] === $email && $digerKullanici['id'] !== $kullaniciId) {
-                            throw new Exception('Bu e-posta adresi başka bir kullanıcı tarafından kullanılıyor.');
-                        }
-                    }
-                }
+        return $this->db->fetchAll($sql, [$personelId]);
+    }
 
-                $kullanici['ad'] = $ad;
-                $kullanici['soyad'] = $soyad;
-                $kullanici['email'] = $email;
-                if ($rol !== null) $kullanici['rol'] = $rol;
-                if ($telefon !== null) $kullanici['telefon'] = $telefon;
-                if ($tercihler !== null) $kullanici['tercihler'] = $tercihler;
-                $kullanici['guncelleme_tarihi'] = time();
-                break;
-            }
+    /**
+     * Personel izin taleplerini getir
+     */
+    public function izinTalepleriniGetir($personelId)
+    {
+        $sql = "SELECT i.*, it.ad as izin_turu_adi 
+                FROM izinler i 
+                LEFT JOIN izin_turleri it ON i.izin_turu = it.id 
+                WHERE i.personel_id = ? AND i.durum = 'beklemede' 
+                ORDER BY i.baslangic_tarihi DESC";
+
+        return $this->db->fetchAll($sql, [$personelId]);
+    }
+
+    /**
+     * Personel düzenle
+     */
+    public function duzenle($personelId, $ad, $soyad, $email, $telefon = '', $yetki = null)
+    {
+        // Personel kontrolü
+        $sql = "SELECT * FROM personel WHERE id = ?";
+        $personel = $this->db->fetch($sql, [$personelId]);
+        if (!$personel) {
+            throw new Exception('Personel bulunamadı.');
         }
 
-        if (!$kullaniciBulundu) {
-            throw new Exception('Kullanıcı bulunamadı.');
+        // Email kontrolü
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Geçersiz e-posta formatı.');
         }
 
-        veriYaz($data);
-        islemLogKaydet('kullanici_guncelle', "Kullanıcı güncellendi: $kullaniciId");
+        // Email benzersizlik kontrolü
+        $sql = "SELECT COUNT(*) as adet FROM personel WHERE email = ? AND id != ?";
+        $kontrol = $this->db->fetch($sql, [$email, $personelId]);
+        if ($kontrol['adet'] > 0) {
+            throw new Exception('Bu e-posta adresi zaten kullanılıyor.');
+        }
+
+        // Personeli güncelle
+        $sql = "UPDATE personel SET ad = ?, soyad = ?, email = ?, telefon = ?";
+        $params = [$ad, $soyad, $email, $telefon];
+
+        if ($yetki !== null) {
+            $sql .= ", yetki = ?";
+            $params[] = $yetki;
+        }
+
+        $sql .= " WHERE id = ?";
+        $params[] = $personelId;
+
+        $this->db->query($sql, $params);
+
+        $this->islemLog->logKaydet('personel_duzenle', "Personel düzenlendi: $ad $soyad");
         return true;
     }
 
     /**
-     * Kullanıcı tercihlerini güncelle
+     * Personel vardiya dağılımı
      */
-    public function tercihleriniGuncelle($kullaniciId, $tercihler)
+    public function vardiyaDagilimi($baslangicTarih, $bitisTarih)
     {
-        $data = veriOku();
-        $kullaniciBulundu = false;
+        $sql = "SELECT p.id, p.ad, p.soyad, 
+                COUNT(v.id) as toplam_vardiya,
+                SUM(CASE WHEN DAYOFWEEK(FROM_UNIXTIME(v.tarih)) IN (1,7) THEN 1 ELSE 0 END) as hafta_sonu,
+                SUM(CASE WHEN vt.gece_vardiyasi = 1 THEN 1 ELSE 0 END) as gece_vardiyasi
+                FROM personel p
+                LEFT JOIN vardiyalar v ON p.id = v.personel_id
+                LEFT JOIN vardiya_turleri vt ON v.vardiya_turu = vt.id
+                WHERE v.tarih BETWEEN ? AND ?
+                GROUP BY p.id
+                ORDER BY p.ad, p.soyad";
 
-        foreach ($data['personel'] as &$kullanici) {
-            if ($kullanici['id'] === $kullaniciId) {
-                $kullaniciBulundu = true;
-                $kullanici['tercihler'] = array_merge($kullanici['tercihler'] ?? [], $tercihler);
-                $kullanici['guncelleme_tarihi'] = time();
-                break;
-            }
-        }
-
-        if (!$kullaniciBulundu) {
-            throw new Exception('Kullanıcı bulunamadı.');
-        }
-
-        veriYaz($data);
-        islemLogKaydet('tercih_guncelle', "Kullanıcı tercihleri güncellendi: $kullaniciId");
-        return true;
+        return $this->db->fetchAll($sql, [$baslangicTarih, $bitisTarih]);
     }
 
     /**
-     * Personel tercihlerini kaydet
+     * Personel tercihleri getir
      */
-    public function tercihKaydet($personelId, $tercihler)
+    public function tercihGetir($personelId)
     {
-        $data = veriOku();
-
-        if (!isset($data['personel_tercihleri'])) {
-            $data['personel_tercihleri'] = [];
-        }
-
-        $tercihBulundu = false;
-        foreach ($data['personel_tercihleri'] as &$tercih) {
-            if ($tercih['personel_id'] === $personelId) {
-                $tercih['tercihler'] = $tercihler;
-                $tercihBulundu = true;
-                break;
-            }
-        }
-
-        if (!$tercihBulundu) {
-            $data['personel_tercihleri'][] = [
-                'personel_id' => $personelId,
-                'tercihler' => $tercihler
-            ];
-        }
-
-        veriYaz($data);
-        return true;
+        $sql = "SELECT * FROM personel_tercihleri WHERE personel_id = ?";
+        return $this->db->fetch($sql, [$personelId]);
     }
 
     /**
-     * Bildirim tercihini güncelle
+     * Personel aylık vardiya sayısı
      */
-    public function bildirimTercihiGuncelle($kullaniciId, $bildirimTercihleri)
+    public function aylikVardiyaSayisi($personelId, $ay, $yil)
     {
-        $data = veriOku();
-        $kullaniciBulundu = false;
+        $baslangic = mktime(0, 0, 0, $ay, 1, $yil);
+        $bitis = mktime(23, 59, 59, $ay + 1, 0, $yil);
 
-        foreach ($data['personel'] as &$kullanici) {
-            if ($kullanici['id'] === $kullaniciId) {
-                $kullaniciBulundu = true;
-                if (!isset($kullanici['tercihler'])) {
-                    $kullanici['tercihler'] = [];
-                }
-                $kullanici['tercihler']['bildirimler'] = $bildirimTercihleri;
-                break;
-            }
-        }
+        $sql = "SELECT COUNT(*) as toplam FROM vardiyalar WHERE personel_id = ? AND tarih BETWEEN ? AND ?";
+        $sonuc = $this->db->fetch($sql, [$personelId, $baslangic, $bitis]);
 
-        if (!$kullaniciBulundu) {
-            throw new Exception('Kullanıcı bulunamadı.');
-        }
-
-        veriYaz($data);
-        return true;
+        return $sonuc['toplam'];
     }
 }

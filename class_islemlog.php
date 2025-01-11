@@ -6,37 +6,42 @@
  */
 class IslemLog
 {
+    private $db;
+    private static $instance = null;
+
+    private function __construct()
+    {
+        $this->db = Database::getInstance();
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * İşlem logu kaydetme
      */
     public function logKaydet($islemTuru, $aciklama)
     {
-        $data = veriOku();
+        $sql = "INSERT INTO islem_loglari (kullanici_id, kullanici_rol, islem_turu, aciklama, ip_adresi, tarih, tarayici) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        if (!isset($data['islem_loglari'])) {
-            $data['islem_loglari'] = [];
-        }
-
-        $yeniLog = [
-            'id' => uniqid(),
-            'kullanici_id' => $_SESSION['kullanici_id'] ?? null,
-            'kullanici_rol' => $_SESSION['rol'] ?? null,
-            'islem_turu' => $islemTuru,
-            'aciklama' => $aciklama,
-            'ip_adresi' => $_SERVER['REMOTE_ADDR'] ?? null,
-            'tarih' => time(),
-            'tarayici' => $_SERVER['HTTP_USER_AGENT'] ?? null
+        $params = [
+            $_SESSION['kullanici_id'] ?? null,
+            $_SESSION['rol'] ?? null,
+            $islemTuru,
+            $aciklama,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            time(),
+            $_SERVER['HTTP_USER_AGENT'] ?? null
         ];
 
-        // Log sayısını kontrol et ve gerekirse eski logları temizle
-        if (count($data['islem_loglari']) > 1000) {
-            // En eski 200 logu sil
-            $data['islem_loglari'] = array_slice($data['islem_loglari'], -800);
-        }
-
-        $data['islem_loglari'][] = $yeniLog;
-        veriYaz($data);
-        return $yeniLog['id'];
+        $this->db->query($sql, $params);
+        return $this->db->lastInsertId();
     }
 
     /**
@@ -44,37 +49,30 @@ class IslemLog
      */
     public function loglariGetir($baslangicTarih = null, $bitisTarih = null, $islemTuru = null, $kullaniciId = null)
     {
-        $data = veriOku();
-        $loglar = [];
+        $sql = "SELECT * FROM islem_loglari WHERE 1=1";
+        $params = [];
 
-        if (!isset($data['islem_loglari'])) {
-            return $loglar;
+        if ($baslangicTarih) {
+            $sql .= " AND tarih >= ?";
+            $params[] = $baslangicTarih;
         }
 
-        foreach ($data['islem_loglari'] as $log) {
-            $ekle = true;
-
-            if ($baslangicTarih && $log['tarih'] < $baslangicTarih) {
-                $ekle = false;
-            }
-
-            if ($bitisTarih && $log['tarih'] > $bitisTarih) {
-                $ekle = false;
-            }
-
-            if ($islemTuru && $log['islem_turu'] !== $islemTuru) {
-                $ekle = false;
-            }
-
-            if ($kullaniciId && $log['kullanici_id'] !== $kullaniciId) {
-                $ekle = false;
-            }
-
-            if ($ekle) {
-                $loglar[] = $log;
-            }
+        if ($bitisTarih) {
+            $sql .= " AND tarih <= ?";
+            $params[] = $bitisTarih;
         }
 
-        return $loglar;
+        if ($islemTuru) {
+            $sql .= " AND islem_turu = ?";
+            $params[] = $islemTuru;
+        }
+
+        if ($kullaniciId) {
+            $sql .= " AND kullanici_id = ?";
+            $params[] = $kullaniciId;
+        }
+
+        $sql .= " ORDER BY tarih DESC";
+        return $this->db->fetchAll($sql, $params);
     }
 }

@@ -6,10 +6,28 @@
  */
 class Izin
 {
+    private $db;
+    private $islemLog;
+    private static $instance = null;
+
+    private function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->islemLog = IslemLog::getInstance();
+    }
+
+    public static function getInstance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     /**
      * İzin talebi oluşturma
      */
-    public function talepOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTuru, $aciklama)
+    public function talepOlustur($personelId, $baslangicTarihi, $bitisTarihi, $izinTuru, $aciklama = '')
     {
         // Tarihleri timestamp'e çevir
         $baslangicTimestamp = is_numeric($baslangicTarihi) ? $baslangicTarihi : strtotime($baslangicTarihi);
@@ -25,232 +43,136 @@ class Izin
             throw new Exception('Geçmiş tarihli izin talebi oluşturamazsınız.');
         }
 
-        $data = veriOku();
-        $gunSayisi = floor(($bitisTimestamp - $baslangicTimestamp) / (60 * 60 * 24)) + 1;
-
-        // Personel kontrolü ve izin hakkı kontrolü
-        $personel = null;
-        foreach ($data['personel'] as $p) {
-            if ($p['id'] === $personelId) {
-                $personel = $p;
-                break;
-            }
-        }
-
+        // Personel kontrolü
+        $sql = "SELECT * FROM personel WHERE id = ?";
+        $personel = $this->db->fetch($sql, [$personelId]);
         if (!$personel) {
             throw new Exception('Personel bulunamadı.');
         }
 
-        // İzin hakkı kontrolü
-        if ($izinTuru === 'yillik') {
-            $kalanIzin = $this->yillikIzinHakkiHesapla($personelId);
-            if ($gunSayisi > $kalanIzin) {
-                throw new Exception("Yeterli yıllık izin hakkınız bulunmuyor. Kalan izin: $kalanIzin gün");
-            }
-        } elseif ($izinTuru === 'mazeret') {
-            if (!isset($personel['izin_haklari']['mazeret'])) {
-                $personel['izin_haklari']['mazeret'] = ['toplam' => 5, 'kullanilan' => 0, 'kalan' => 5];
-            }
-            $kalanMazeret = $personel['izin_haklari']['mazeret']['kalan'];
-            if ($gunSayisi > $kalanMazeret) {
-                throw new Exception("Yeterli mazeret izni hakkınız bulunmuyor. Kalan izin: $kalanMazeret gün");
-            }
+        // Çakışma kontrolü
+        $sql = "SELECT COUNT(*) as adet FROM izinler 
+                WHERE personel_id = ? 
+                AND ((baslangic_tarihi BETWEEN ? AND ?) 
+                OR (bitis_tarihi BETWEEN ? AND ?))
+                AND durum != 'reddedildi'";
+        
+        $params = [
+            $personelId,
+            $baslangicTimestamp,
+            $bitisTimestamp,
+            $baslangicTimestamp,
+            $bitisTimestamp
+        ];
+        
+        $cakisma = $this->db->fetch($sql, $params);
+        if ($cakisma['adet'] > 0) {
+            throw new Exception('Seçilen tarih aralığında başka bir izin talebi bulunmaktadır.');
         }
 
-        // Vardiya çakışması kontrolü
-        for ($i = 0; $i < $gunSayisi; $i++) {
-            $kontrolTarihi = strtotime("+$i day", $baslangicTimestamp);
-            foreach ($data['vardiyalar'] as $vardiya) {
-                $vardiyaTarihi = is_numeric($vardiya['tarih']) ? $vardiya['tarih'] : strtotime($vardiya['tarih']);
-                if (
-                    $vardiya['personel_id'] === $personelId &&
-                    date('Y-m-d', $vardiyaTarihi) === date('Y-m-d', $kontrolTarihi)
-                ) {
-                    throw new Exception('Seçilen tarih aralığında vardiya bulunuyor. Önce vardiyaları düzenlemelisiniz.');
-                }
-            }
+        // Vardiya kontrolü
+        $sql = "SELECT COUNT(*) as adet FROM vardiyalar 
+                WHERE personel_id = ? 
+                AND tarih BETWEEN ? AND ?";
+        
+        $vardiya = $this->db->fetch($sql, [$personelId, $baslangicTimestamp, $bitisTimestamp]);
+        if ($vardiya['adet'] > 0) {
+            throw new Exception('Seçilen tarih aralığında vardiyalarınız bulunmaktadır.');
         }
 
-        // Çakışan izin kontrolü
-        foreach ($data['izinler'] as $izin) {
-            if ($izin['personel_id'] === $personelId) {
-                $izinBaslangic = is_numeric($izin['baslangic_tarihi']) ? $izin['baslangic_tarihi'] : strtotime($izin['baslangic_tarihi']);
-                $izinBitis = is_numeric($izin['bitis_tarihi']) ? $izin['bitis_tarihi'] : strtotime($izin['bitis_tarihi']);
-
-                if (($baslangicTimestamp >= $izinBaslangic && $baslangicTimestamp <= $izinBitis) ||
-                    ($bitisTimestamp >= $izinBaslangic && $bitisTimestamp <= $izinBitis)
-                ) {
-                    throw new Exception('Seçilen tarih aralığında başka bir izin bulunuyor.');
-                }
-            }
-        }
-
-        $yeniTalep = [
-            'id' => uniqid(),
-            'personel_id' => $personelId,
-            'baslangic_tarihi' => $baslangicTimestamp,
-            'bitis_tarihi' => $bitisTimestamp,
-            'izin_turu' => $izinTuru,
-            'aciklama' => $aciklama,
-            'durum' => 'beklemede',
-            'gun_sayisi' => $gunSayisi,
-            'olusturma_tarihi' => time(),
-            'guncelleme_tarihi' => time(),
-            'belgeler' => [],
-            'yonetici_notu' => ''
+        // İzin talebini kaydet
+        $sql = "INSERT INTO izinler (personel_id, baslangic_tarihi, bitis_tarihi, izin_turu, aciklama, durum, olusturma_tarihi) 
+                VALUES (?, ?, ?, ?, ?, 'beklemede', ?)";
+        
+        $params = [
+            $personelId,
+            $baslangicTimestamp,
+            $bitisTimestamp,
+            $izinTuru,
+            $aciklama,
+            time()
         ];
 
-        if (!isset($data['izin_talepleri'])) {
-            $data['izin_talepleri'] = [];
-        }
+        $this->db->query($sql, $params);
+        $izinId = $this->db->lastInsertId();
 
-        $data['izin_talepleri'][] = $yeniTalep;
-        veriYaz($data);
-
-        islemLogKaydet('izin_talebi_olustur', "İzin talebi oluşturuldu: $personelId - $izinTuru ($gunSayisi gün)");
-        return $yeniTalep['id'];
+        $this->islemLog->logKaydet('izin_talebi', "İzin talebi oluşturuldu: Personel ID: $personelId, Başlangıç: " . date('d.m.Y', $baslangicTimestamp));
+        return $izinId;
     }
 
     /**
-     * İzin talebini onayla/reddet
+     * İzin talebini güncelleme
      */
-    public function talepGuncelle($talepId, $durum, $yoneticiNotu = '')
+    public function talepGuncelle($izinId, $durum, $aciklama = '')
     {
-        $data = veriOku();
-        $talep = null;
-
-        foreach ($data['izin_talepleri'] as &$talep) {
-            if ($talep['id'] === $talepId) {
-                // Eğer talep zaten onaylanmış veya reddedilmişse işlem yapma
-                if ($talep['durum'] !== 'beklemede') {
-                    throw new Exception('Bu talep zaten ' . $talep['durum'] . ' durumunda.');
-                }
-
-                $talep['durum'] = $durum;
-                $talep['yonetici_notu'] = $yoneticiNotu;
-                $talep['guncelleme_tarihi'] = time();
-
-                // Eğer onaylandıysa izinler listesine ekle ve izin haklarını güncelle
-                if ($durum === 'onaylandi') {
-                    if (!isset($data['izinler'])) {
-                        $data['izinler'] = [];
-                    }
-
-                    $yeniIzin = [
-                        'id' => uniqid(),
-                        'personel_id' => $talep['personel_id'],
-                        'baslangic_tarihi' => $talep['baslangic_tarihi'],
-                        'bitis_tarihi' => $talep['bitis_tarihi'],
-                        'izin_turu' => $talep['izin_turu'],
-                        'aciklama' => $talep['aciklama'],
-                        'onaylayan_id' => $_SESSION['kullanici_id'] ?? null,
-                        'onay_tarihi' => time(),
-                        'olusturma_tarihi' => time(),
-                        'guncelleme_tarihi' => time(),
-                        'gun_sayisi' => $talep['gun_sayisi'] ?? null,
-                        'belgeler' => $talep['belgeler'] ?? [],
-                        'notlar' => $yoneticiNotu
-                    ];
-
-                    $data['izinler'][] = $yeniIzin;
-
-                    // İzin haklarını güncelle
-                    foreach ($data['personel'] as &$personel) {
-                        if ($personel['id'] === $talep['personel_id']) {
-                            if ($talep['izin_turu'] === 'yillik') {
-                                if (!isset($personel['izin_haklari']['yillik'])) {
-                                    $personel['izin_haklari']['yillik'] = [
-                                        'toplam' => 14,
-                                        'kullanilan' => 0,
-                                        'kalan' => 14,
-                                        'son_guncelleme' => time()
-                                    ];
-                                }
-                                $personel['izin_haklari']['yillik']['kullanilan'] += $talep['gun_sayisi'];
-                                $personel['izin_haklari']['yillik']['kalan'] =
-                                    $personel['izin_haklari']['yillik']['toplam'] -
-                                    $personel['izin_haklari']['yillik']['kullanilan'];
-                            } elseif ($talep['izin_turu'] === 'mazeret') {
-                                if (!isset($personel['izin_haklari']['mazeret'])) {
-                                    $personel['izin_haklari']['mazeret'] = [
-                                        'toplam' => 5,
-                                        'kullanilan' => 0,
-                                        'kalan' => 5
-                                    ];
-                                }
-                                $personel['izin_haklari']['mazeret']['kullanilan'] += $talep['gun_sayisi'];
-                                $personel['izin_haklari']['mazeret']['kalan'] =
-                                    $personel['izin_haklari']['mazeret']['toplam'] -
-                                    $personel['izin_haklari']['mazeret']['kullanilan'];
-                            } elseif ($talep['izin_turu'] === 'hastalik') {
-                                if (!isset($personel['izin_haklari']['hastalik'])) {
-                                    $personel['izin_haklari']['hastalik'] = ['kullanilan' => 0];
-                                }
-                                $personel['izin_haklari']['hastalik']['kullanilan'] += $talep['gun_sayisi'];
-                            }
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-        }
-
-        if ($talep === null) {
+        // İzin kontrolü
+        $sql = "SELECT i.*, p.ad, p.soyad 
+                FROM izinler i 
+                LEFT JOIN personel p ON i.personel_id = p.id 
+                WHERE i.id = ?";
+        
+        $izin = $this->db->fetch($sql, [$izinId]);
+        if (!$izin) {
             throw new Exception('İzin talebi bulunamadı.');
         }
 
-        veriYaz($data);
-        islemLogKaydet('izin_talebi_guncelle', "İzin talebi güncellendi: $talepId - Durum: $durum");
+        if ($izin['durum'] !== 'beklemede') {
+            throw new Exception('Sadece bekleyen izin talepleri güncellenebilir.');
+        }
+
+        // İzin durumunu güncelle
+        $sql = "UPDATE izinler SET durum = ?, guncelleme_tarihi = ?, guncelleme_aciklama = ? WHERE id = ?";
+        $this->db->query($sql, [$durum, time(), $aciklama, $izinId]);
+
+        $this->islemLog->logKaydet(
+            'izin_guncelle', 
+            "İzin talebi güncellendi: {$izin['ad']} {$izin['soyad']}, Durum: $durum"
+        );
+
         return true;
     }
 
     /**
-     * Yıllık izin hakkı hesapla
+     * Yıllık izin hakkı hesaplama
      */
-    public function yillikIzinHakkiHesapla($personelId)
+    public function yillikIzinHakkiHesapla($personelId, $yil = null)
     {
-        $data = veriOku();
-        $personel = null;
-
-        // Önce personeli bul ve izin haklarını kontrol et
-        foreach ($data['personel'] as $p) {
-            if ($p['id'] === $personelId) {
-                $personel = $p;
-                break;
-            }
+        if ($yil === null) {
+            $yil = date('Y');
         }
 
-        if (!$personel || !isset($personel['izin_haklari']['yillik'])) {
-            return 14; // Varsayılan yıllık izin hakkı
+        // Personel bilgilerini al
+        $sql = "SELECT ise_giris_tarihi FROM personel WHERE id = ?";
+        $personel = $this->db->fetch($sql, [$personelId]);
+        if (!$personel) {
+            throw new Exception('Personel bulunamadı.');
         }
 
-        $izinHakki = $personel['izin_haklari']['yillik'];
-        $kullanilanIzin = 0;
+        $iseGirisTimestamp = $personel['ise_giris_tarihi'];
+        $calismaYili = floor((time() - $iseGirisTimestamp) / (365 * 24 * 60 * 60));
 
-        // Onaylanmış izinleri hesapla
-        foreach ($data['izinler'] as $izin) {
-            if ($izin['personel_id'] === $personelId && $izin['izin_turu'] === 'yillik') {
-                $baslangicTimestamp = is_numeric($izin['baslangic_tarihi']) ? $izin['baslangic_tarihi'] : strtotime($izin['baslangic_tarihi']);
-                $bitisTimestamp = is_numeric($izin['bitis_tarihi']) ? $izin['bitis_tarihi'] : strtotime($izin['bitis_tarihi']);
-                $kullanilanIzin += floor(($bitisTimestamp - $baslangicTimestamp) / (60 * 60 * 24)) + 1;
-            }
-        }
+        // Çalışma yılına göre izin hakkı
+        $izinHakki = $calismaYili < 5 ? 14 : ($calismaYili < 15 ? 20 : 26);
 
-        // Bekleyen izin taleplerini hesapla
-        foreach ($data['izin_talepleri'] as $talep) {
-            if (
-                $talep['personel_id'] === $personelId &&
-                $talep['izin_turu'] === 'yillik' &&
-                $talep['durum'] === 'beklemede'
-            ) {
-                $baslangicTimestamp = is_numeric($talep['baslangic_tarihi']) ? $talep['baslangic_tarihi'] : strtotime($talep['baslangic_tarihi']);
-                $bitisTimestamp = is_numeric($talep['bitis_tarihi']) ? $talep['bitis_tarihi'] : strtotime($talep['bitis_tarihi']);
-                $kullanilanIzin += floor(($bitisTimestamp - $baslangicTimestamp) / (60 * 60 * 24)) + 1;
-            }
-        }
+        // Kullanılan izinleri hesapla
+        $yilBaslangic = mktime(0, 0, 0, 1, 1, $yil);
+        $yilBitis = mktime(23, 59, 59, 12, 31, $yil);
 
-        return $izinHakki['toplam'] - $kullanilanIzin;
+        $sql = "SELECT SUM(DATEDIFF(FROM_UNIXTIME(bitis_tarihi), FROM_UNIXTIME(baslangic_tarihi)) + 1) as toplam_gun 
+                FROM izinler 
+                WHERE personel_id = ? 
+                AND izin_turu = 'yillik' 
+                AND durum = 'onaylandi' 
+                AND baslangic_tarihi BETWEEN ? AND ?";
+
+        $kullanilan = $this->db->fetch($sql, [$personelId, $yilBaslangic, $yilBitis]);
+        $kullanilanGun = $kullanilan['toplam_gun'] ?? 0;
+
+        return [
+            'toplam_hak' => $izinHakki,
+            'kullanilan' => $kullanilanGun,
+            'kalan' => $izinHakki - $kullanilanGun
+        ];
     }
 
     /**
@@ -258,18 +180,37 @@ class Izin
      */
     public function turleriniGetir()
     {
-        $data = veriOku();
-
-        if (!isset($data['sistem_ayarlari']['izin_turleri'])) {
-            // Varsayılan izin türleri
-            return [
-                'yillik' => 'Yıllık İzin',
-                'mazeret' => 'Mazeret İzni',
-                'hastalik' => 'Hastalık İzni',
-                'ucretsiz' => 'Ücretsiz İzin'
-            ];
-        }
-
-        return $data['sistem_ayarlari']['izin_turleri'];
+        return [
+            'yillik' => [
+                'id' => 'yillik',
+                'ad' => 'Yıllık İzin',
+                'max_gun' => 30,
+                'ucretli' => true
+            ],
+            'dogum' => [
+                'id' => 'dogum',
+                'ad' => 'Doğum İzni',
+                'max_gun' => 56,
+                'ucretli' => true
+            ],
+            'olum' => [
+                'id' => 'olum',
+                'ad' => 'Ölüm İzni',
+                'max_gun' => 3,
+                'ucretli' => true
+            ],
+            'evlilik' => [
+                'id' => 'evlilik',
+                'ad' => 'Evlilik İzni',
+                'max_gun' => 3,
+                'ucretli' => true
+            ],
+            'ucretsiz' => [
+                'id' => 'ucretsiz',
+                'ad' => 'Ücretsiz İzin',
+                'max_gun' => 90,
+                'ucretli' => false
+            ]
+        ];
     }
 }
