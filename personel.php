@@ -98,23 +98,7 @@
     <div class="container">
         <h1>Personel Yönetimi</h1>
 
-        <nav>
-            <div class="user-info">
-                <div>
-                    <i class="fas fa-user"></i>
-                    Hoş geldiniz, <?php echo htmlspecialchars($_SESSION['ad_soyad']); ?>
-                    (<?php echo htmlspecialchars($_SESSION['rol']); ?>)
-                </div>
-                <a href="cikis.php"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
-            </div>
-
-            <div class="menu">
-                <a href="index.php"><i class="fas fa-calendar-week"></i> Vardiya Takvimi</a>
-                <a href="personel.php" class="active"><i class="fas fa-users"></i> Personel Yönetimi</a>
-                <a href="izin.php"><i class="fas fa-calendar-alt"></i> İzin İşlemleri</a>
-                <a href="profil.php"><i class="fas fa-user-circle"></i> Profil</a>
-            </div>
-        </nav>
+        <?php require_once 'nav.php'; ?>
 
         <?php if ($hata): ?>
             <div class="hata-mesaji"><?php echo htmlspecialchars($hata); ?></div>
