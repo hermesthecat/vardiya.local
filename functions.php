@@ -450,7 +450,13 @@ function gunlukVardiyalariGetir($tarih)
 
             $vardiyaTurleri = vardiyaTurleriniGetir();
             $vardiyaBilgisi = $vardiyaTurleri[$vardiya['vardiya_turu']] ?? null;
-            $vardiyaKisaltma = $vardiyaBilgisi ? mb_substr($vardiyaBilgisi['id'], 0, 1, 'UTF-8') : '?';
+            $vardiyaKisaltma = sprintf(
+                '%s - %s (%s-%s)',
+                $personel['ad'] . ' ' . $personel['soyad'],
+                $vardiyaBilgisi['etiket'],
+                $vardiyaBilgisi['baslangic'],
+                $vardiyaBilgisi['bitis']
+            );
 
             $gunlukVardiyalar[] = [
                 'id' => $vardiya['id'],
