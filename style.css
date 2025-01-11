@@ -1345,3 +1345,211 @@ tr:hover {
 .form-group.full-width {
     grid-column: 1 / -1;
 }
+
+/* İzin Talebi Formu */
+.izin-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 35px;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+}
+
+.izin-form .form-group {
+    margin: 0;
+    position: relative;
+}
+
+.izin-form .form-group:nth-child(3),
+.izin-form .form-group:nth-child(4) {
+    margin-top: 15px;
+}
+
+.izin-form label {
+    display: block;
+    color: #2c3e50;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.izin-form label i {
+    color: #4caf50;
+    margin-right: 8px;
+    width: 16px;
+}
+
+.izin-form select,
+.izin-form input[type="date"],
+.izin-form textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #2c3e50;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.izin-form select:focus,
+.izin-form input[type="date"]:focus,
+.izin-form textarea:focus {
+    border-color: #4caf50;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    background-color: #fff;
+}
+
+.izin-form textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.izin-form select[name="personel_id"] {
+    font-weight: 500;
+}
+
+.izin-form select[name="izin_turu"] {
+    color: #2c3e50;
+}
+
+.izin-form button[type="submit"] {
+    grid-column: 2;
+    justify-self: end;
+    padding: 12px 30px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.izin-form button[type="submit"]:hover {
+    background: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.izin-form button[type="submit"] i {
+    font-size: 18px;
+}
+
+/* Responsive düzenlemeler */
+@media (max-width: 768px) {
+    .izin-form {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .izin-form button[type="submit"] {
+        grid-column: 1;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* İzin Talepleri Tablosu - Özel Stil */
+.izin-talepleri-tablo {
+    width: 100%;
+    overflow-x: auto;
+    margin: 20px 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.izin-talepleri-tablo table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.izin-talepleri-tablo th,
+.izin-talepleri-tablo td {
+    padding: 6px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.izin-talepleri-tablo th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Sütun genişlikleri */
+.izin-talepleri-tablo th:nth-child(1) { min-width: 100px; } /* Personel */
+.izin-talepleri-tablo th:nth-child(2) { min-width: 80px; } /* İzin Türü */
+.izin-talepleri-tablo th:nth-child(3) { min-width: 80px; } /* Başlangıç */
+.izin-talepleri-tablo th:nth-child(4) { min-width: 80px; } /* Bitiş */
+.izin-talepleri-tablo th:nth-child(5) { min-width: 50px; } /* Süre */
+.izin-talepleri-tablo th:nth-child(6) { min-width: 120px; } /* Açıklama */
+.izin-talepleri-tablo th:nth-child(7) { min-width: 80px; } /* Durum */
+.izin-talepleri-tablo th:nth-child(8) { min-width: 100px; } /* Yönetici Notu */
+.izin-talepleri-tablo th:nth-child(9) { min-width: 160px; } /* İşlemler */
+
+/* Açıklama ve yönetici notu için özel stil */
+.izin-talepleri-tablo td:nth-child(6),
+.izin-talepleri-tablo td:nth-child(8) {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* İşlem butonları için özel stiller */
+.izin-talepleri-tablo .islem-butonlar {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.izin-talepleri-tablo .islem-butonlar button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    min-width: 60px;
+}
+
+.izin-talepleri-tablo .islem-butonlar .btn-onayla {
+    background-color: #4caf50;
+}
+
+.izin-talepleri-tablo .islem-butonlar .btn-reddet {
+    background-color: #f44336;
+}
+
+.izin-talepleri-tablo .yonetici-notu {
+    width: 100%;
+    min-height: 40px;
+    margin-bottom: 4px;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Responsive düzenlemeler */
+@media screen and (max-width: 1200px) {
+    .izin-talepleri-tablo th:nth-child(8), 
+    .izin-talepleri-tablo td:nth-child(8),
+    .izin-talepleri-tablo th:nth-child(5), 
+    .izin-talepleri-tablo td:nth-child(5) {
+        display: none;
+    }
+}

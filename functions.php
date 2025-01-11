@@ -382,6 +382,15 @@ function personelEkle($ad, $soyad, $email, $telefon = '', $yetki = 'personel')
 // Vardiya ekleme
 function vardiyaEkle($personelId, $tarih, $vardiyaTuru, $notlar = '')
 {
+    $data = veriOku();
+    
+    // Personel bilgilerini al
+    $personel = array_filter($data['personel'], function($p) use ($personelId) {
+        return $p['id'] === $personelId;
+    });
+    $personel = reset($personel);
+    $personelAdSoyad = $personel['ad'] . ' ' . $personel['soyad'];
+
     // Vardiya çakışması kontrolü
     if (vardiyaCakismasiVarMi($personelId, $tarih, $vardiyaTuru)) {
         throw new Exception('Bu personelin seçilen tarihte başka bir vardiyası bulunuyor.');
@@ -409,7 +418,7 @@ function vardiyaEkle($personelId, $tarih, $vardiyaTuru, $notlar = '')
     $data['vardiyalar'][] = $yeniVardiya;
     veriYaz($data);
 
-    islemLogKaydet('vardiya_ekle', "Yeni vardiya eklendi: Personel ID: $personelId, Tarih: " . date('Y-m-d', $tarih));
+    islemLogKaydet('vardiya_ekle', "Yeni vardiya eklendi: $personelAdSoyad, Tarih: " . date('d.m.Y', $tarih));
     return $yeniVardiya['id'];
 }
 
@@ -1675,6 +1684,14 @@ function islemLoglariGetir($baslangicTarih = null, $bitisTarih = null, $islemTur
 function kullaniciTercihleriniGuncelle($kullaniciId, $tercihler)
 {
     $data = veriOku();
+    
+    // Personel bilgilerini al
+    $personel = array_filter($data['personel'], function($p) use ($kullaniciId) {
+        return $p['id'] === $kullaniciId;
+    });
+    $personel = reset($personel);
+    $personelAdSoyad = $personel['ad'] . ' ' . $personel['soyad'];
+
     $varsayilanTercihler = [
         'bildirimler' => true,
         'tercih_edilen_vardiyalar' => [],
@@ -1689,38 +1706,14 @@ function kullaniciTercihleriniGuncelle($kullaniciId, $tercihler)
 
     foreach ($data['personel'] as &$kullanici) {
         if ($kullanici['id'] === $kullaniciId) {
-            // Mevcut tercihleri al veya varsayılan değerleri kullan
-            $mevcutTercihler = $kullanici['tercihler'] ?? $varsayilanTercihler;
-
-            // Yeni tercihleri mevcut tercihlerle birleştir
-            $kullanici['tercihler'] = array_merge($mevcutTercihler, $tercihler);
-
-            // Tercih değerlerini doğrula ve düzelt
-            $kullanici['tercihler']['max_ardisik_vardiya'] =
-                min(7, max(1, intval($kullanici['tercihler']['max_ardisik_vardiya'])));
-
-            $kullanici['tercihler']['min_gunluk_dinlenme'] =
-                min(24, max(8, intval($kullanici['tercihler']['min_gunluk_dinlenme'])));
-
-            // Geçersiz gün indekslerini temizle
-            $kullanici['tercihler']['tercih_edilmeyen_gunler'] = array_filter(
-                $kullanici['tercihler']['tercih_edilmeyen_gunler'],
-                function ($gun) {
-                    return is_numeric($gun) && $gun >= 0 && $gun <= 6;
-                }
-            );
-
-            // Geçersiz vardiya türlerini temizle
-            $vardiyaTurleri = array_keys(vardiyaTurleriniGetir());
-            $kullanici['tercihler']['tercih_edilen_vardiyalar'] = array_filter(
-                $kullanici['tercihler']['tercih_edilen_vardiyalar'],
-                function ($vardiya) use ($vardiyaTurleri) {
-                    return in_array($vardiya, $vardiyaTurleri);
-                }
+            // Mevcut tercihleri koru
+            $kullanici['tercihler'] = array_merge(
+                $kullanici['tercihler'] ?? $varsayilanTercihler,
+                $tercihler
             );
 
             veriYaz($data);
-            islemLogKaydet('tercih_guncelle', "Kullanıcı tercihleri güncellendi: $kullaniciId");
+            islemLogKaydet('tercih_guncelle', "Kullanıcı tercihleri güncellendi: $personelAdSoyad");
             return true;
         }
     }

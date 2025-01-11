@@ -99,9 +99,9 @@
         <!-- İzin Talep Formu -->
         <div class="section">
             <h2><i class="fas fa-plus-circle"></i> Yeni İzin Talebi</h2>
-            <form method="POST" class="form-section">
+            <form method="POST" class="izin-form">
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> Personel:</label>
+                    <label><i class="fas fa-user"></i> Personel</label>
                     <select name="personel_id" required>
                         <?php foreach ($personeller as $personel): ?>
                             <option value="<?php echo $personel['id']; ?>">
@@ -111,28 +111,34 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label><i class="fas fa-tag"></i> İzin Türü:</label>
+                    <label><i class="fas fa-tag"></i> İzin Türü</label>
                     <select name="izin_turu" required>
                         <?php foreach (izinTurleriniGetir() as $tur => $aciklama): ?>
                             <option value="<?php echo $tur; ?>"><?php echo $aciklama; ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label><i class="fas fa-calendar"></i> Başlangıç Tarihi:</label>
+                    <label><i class="fas fa-calendar"></i> Başlangıç Tarihi</label>
                     <input type="date" name="baslangic_tarihi" required min="<?php echo date('Y-m-d'); ?>">
                 </div>
+
                 <div class="form-group">
-                    <label><i class="fas fa-calendar"></i> Bitiş Tarihi:</label>
+                    <label><i class="fas fa-calendar"></i> Bitiş Tarihi</label>
                     <input type="date" name="bitis_tarihi" required min="<?php echo date('Y-m-d'); ?>">
                 </div>
-                <div class="form-group">
-                    <label><i class="fas fa-comment"></i> Açıklama:</label>
-                    <textarea name="aciklama" rows="4" required placeholder="İzin talebinizin nedenini açıklayın..."></textarea>
+
+                <div class="form-group full-width">
+                    <label><i class="fas fa-comment"></i> Açıklama</label>
+                    <textarea name="aciklama" required placeholder="İzin talebinizin nedenini açıklayın..."></textarea>
                 </div>
-                <button type="submit" name="izin_talebi" class="submit-btn">
-                    <i class="fas fa-paper-plane"></i> İzin Talebi Oluştur
+
+                <button type="submit" name="izin_talebi">
+                    <i class="fas fa-paper-plane"></i>
+                    İzin Talebi Oluştur
                 </button>
             </form>
         </div>
@@ -140,7 +146,7 @@
         <!-- İzin Talepleri Listesi -->
         <div class="section">
             <h2><i class="fas fa-list"></i> İzin Talepleri</h2>
-            <div class="tablo-container">
+            <div class="izin-talepleri-tablo">
                 <table>
                     <thead>
                         <tr>
