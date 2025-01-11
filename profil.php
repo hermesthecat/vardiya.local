@@ -104,31 +104,68 @@
         <?php endif; ?>
 
         <!-- Kullanıcı Bilgileri -->
-        <div class="section">
-            <h2>Kullanıcı Bilgileri</h2>
-            <div class="info-group">
-                <label>Ad:</label>
-                <span><?php echo htmlspecialchars($kullanici['ad']); ?></span>
+        <div class="kullanici-bilgi-karti">
+            <div class="kullanici-baslik">
+                <div class="kullanici-avatar">
+                    <?php echo strtoupper(substr($kullanici['ad'], 0, 1)); ?>
+                </div>
+                <div class="kullanici-isim">
+                    <h2><?php echo htmlspecialchars($kullanici['ad'] . ' ' . $kullanici['soyad']); ?></h2>
+                    <div class="kullanici-rol"><?php echo htmlspecialchars(ucfirst($kullanici['yetki'])); ?></div>
+                </div>
             </div>
-
-            <div class="info-group">
-                <label>Soyad:</label>
-                <span><?php echo htmlspecialchars($kullanici['soyad']); ?></span>
-            </div>
-
-            <div class="info-group">
-                <label>E-posta:</label>
-                <span><?php echo htmlspecialchars($kullanici['email']); ?></span>
-            </div>
-
-            <div class="info-group">
-                <label>Telefon:</label>
-                <span><?php echo htmlspecialchars($kullanici['telefon']); ?></span>
-            </div>
-
-            <div class="info-group">
-                <label>Rol:</label>
-                <span><?php echo htmlspecialchars($kullanici['yetki']); ?></span>
+            
+            <div class="kullanici-detaylar">
+                <div class="detay-grup">
+                    <div class="detay-baslik">E-posta</div>
+                    <div class="detay-icerik"><?php echo htmlspecialchars($kullanici['email']); ?></div>
+                </div>
+                
+                <div class="detay-grup">
+                    <div class="detay-baslik">Telefon</div>
+                    <div class="detay-icerik"><?php echo htmlspecialchars($kullanici['telefon'] ?: 'Belirtilmemiş'); ?></div>
+                </div>
+                
+                <div class="detay-grup">
+                    <div class="detay-baslik">Tercih Edilen Vardiyalar</div>
+                    <div class="detay-icerik">
+                        <?php
+                        if (!empty($kullanici['tercihler']['tercih_edilen_vardiyalar'])) {
+                            $vardiyalar = array_map(function($vardiyaTuru) {
+                                return vardiyaTuruEtiketGetir($vardiyaTuru);
+                            }, $kullanici['tercihler']['tercih_edilen_vardiyalar']);
+                            echo htmlspecialchars(implode(', ', $vardiyalar));
+                        } else {
+                            echo 'Belirtilmemiş';
+                        }
+                        ?>
+                    </div>
+                </div>
+                
+                <div class="detay-grup">
+                    <div class="detay-baslik">Tercih Edilmeyen Günler</div>
+                    <div class="detay-icerik">
+                        <?php
+                        if (!empty($kullanici['tercihler']['tercih_edilmeyen_gunler'])) {
+                            $gunler = [
+                                'pazartesi' => 'Pazartesi',
+                                'sali' => 'Salı',
+                                'carsamba' => 'Çarşamba',
+                                'persembe' => 'Perşembe',
+                                'cuma' => 'Cuma',
+                                'cumartesi' => 'Cumartesi',
+                                'pazar' => 'Pazar'
+                            ];
+                            $tercihEdilmeyenGunler = array_map(function($gun) use ($gunler) {
+                                return $gunler[$gun];
+                            }, $kullanici['tercihler']['tercih_edilmeyen_gunler']);
+                            echo htmlspecialchars(implode(', ', $tercihEdilmeyenGunler));
+                        } else {
+                            echo 'Belirtilmemiş';
+                        }
+                        ?>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -210,30 +247,49 @@
         </div>
 
         <!-- Son İşlemler -->
-        <div class="section">
+        <div class="islem-tablosu">
             <h2>Son İşlemler</h2>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Tarih</th>
-                        <th>İşlem</th>
-                        <th>Açıklama</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $loglar = islemLoglariGetir(null, null, null, $_SESSION['kullanici_id']);
-                    $loglar = array_slice(array_reverse($loglar), 0, 10); // Son 10 işlem
-                    foreach ($loglar as $log):
-                    ?>
+            <div class="tablo-container">
+                <table>
+                    <thead>
                         <tr>
-                            <td data-timestamp="<?php echo $log['tarih']; ?>"><?php echo tarihFormatla($log['tarih'], 'tam_saat'); ?></td>
-                            <td><?php echo htmlspecialchars($log['islem_turu']); ?></td>
-                            <td><?php echo htmlspecialchars($log['aciklama']); ?></td>
+                            <th>Tarih</th>
+                            <th>İşlem Türü</th>
+                            <th>Kullanıcı</th>
+                            <th>Açıklama</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $data = veriOku();
+                        // Sadece kullanıcının kendi işlemlerini göster
+                        $kullaniciIslemleri = array_filter($data['islem_loglari'], function($islem) {
+                            return $islem['kullanici_id'] === $_SESSION['kullanici_id'];
+                        });
+                        $islemler = array_slice(array_reverse($kullaniciIslemleri), 0, 10);
+                        foreach ($islemler as $islem):
+                        ?>
+                            <tr>
+                                <td><?php echo date('d.m.Y H:i', $islem['tarih']); ?></td>
+                                <td><?php echo htmlspecialchars($islem['islem_turu']); ?></td>
+                                <td><?php 
+                                    if ($islem['kullanici_id']) {
+                                        foreach ($data['personel'] as $personel) {
+                                            if ($personel['id'] === $islem['kullanici_id']) {
+                                                echo htmlspecialchars($personel['ad'] . ' ' . $personel['soyad']);
+                                                break;
+                                            }
+                                        }
+                                    } else {
+                                        echo 'Sistem';
+                                    }
+                                ?></td>
+                                <td><?php echo htmlspecialchars($islem['aciklama']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
