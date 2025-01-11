@@ -450,13 +450,7 @@ function gunlukVardiyalariGetir($tarih)
 
             $vardiyaTurleri = vardiyaTurleriniGetir();
             $vardiyaBilgisi = $vardiyaTurleri[$vardiya['vardiya_turu']] ?? null;
-            $vardiyaKisaltma = sprintf(
-                '%s - %s (%s-%s)',
-                $personel['ad'] . ' ' . $personel['soyad'],
-                $vardiyaBilgisi['etiket'],
-                $vardiyaBilgisi['baslangic'],
-                $vardiyaBilgisi['bitis']
-            );
+            $vardiyaKisaltma = $vardiyaBilgisi ? $vardiyaBilgisi['etiket'] : '?';
 
             $gunlukVardiyalar[] = [
                 'id' => $vardiya['id'],
@@ -2075,14 +2069,15 @@ function vardiyaSuresiKontrol($vardiyaTuru, $personelId, $tarih)
  * @return array Rapor verileri
  * @throws Exception Hata durumunda
  */
-function vardiyaRaporuGetir($baslangic_tarihi, $bitis_tarihi, $personel_id = null, $vardiya_turu = null) {
+function vardiyaRaporuGetir($baslangic_tarihi, $bitis_tarihi, $personel_id = null, $vardiya_turu = null)
+{
     $data = veriOku();
     $vardiyalar = $data['vardiyalar'] ?? [];
     $personeller = $data['personel'] ?? [];
     $vardiyaTurleri = vardiyaTurleriniGetir();
 
     // Filtreleme
-    $filtrelenmisVardiyalar = array_filter($vardiyalar, function($vardiya) use ($baslangic_tarihi, $bitis_tarihi, $personel_id, $vardiya_turu) {
+    $filtrelenmisVardiyalar = array_filter($vardiyalar, function ($vardiya) use ($baslangic_tarihi, $bitis_tarihi, $personel_id, $vardiya_turu) {
         if ($vardiya['tarih'] < $baslangic_tarihi || $vardiya['tarih'] > $bitis_tarihi) {
             return false;
         }
@@ -2140,7 +2135,7 @@ function vardiyaRaporuGetir($baslangic_tarihi, $bitis_tarihi, $personel_id = nul
     // Detaylı vardiya listesi
     $detayliVardiyalar = [];
     foreach ($filtrelenmisVardiyalar as $vardiya) {
-        $personel = array_filter($personeller, function($p) use ($vardiya) {
+        $personel = array_filter($personeller, function ($p) use ($vardiya) {
             return $p['id'] === $vardiya['personel_id'];
         });
         $personel = reset($personel);
