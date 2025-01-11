@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
   background-color: white;
   padding: 20px;
@@ -731,4 +731,128 @@ nav {
     width: 100%;
     justify-content: center;
   }
+}
+
+.tercihler {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.tercih-grup {
+    flex: 1;
+    min-width: 200px;
+}
+
+.checkbox-label {
+    flex-basis: 100%;
+    margin-bottom: 10px;
+}
+
+.tercih-grup select {
+    width: 100%;
+    min-height: 100px;
+    margin-top: 5px;
+}
+
+/* İzin Tablosu Stilleri */
+.tablo-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.tablo-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    min-width: 1200px;
+}
+
+.tablo-container th {
+    background: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    white-space: nowrap;
+}
+
+.tablo-container td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+/* Sütun genişlikleri */
+.tablo-container th:nth-child(1), .tablo-container td:nth-child(1) { width: 140px; } /* Personel */
+.tablo-container th:nth-child(2), .tablo-container td:nth-child(2) { width: 120px; } /* İzin Türü */
+.tablo-container th:nth-child(3), .tablo-container td:nth-child(3) { width: 100px; } /* Başlangıç */
+.tablo-container th:nth-child(4), .tablo-container td:nth-child(4) { width: 100px; } /* Bitiş */
+.tablo-container th:nth-child(5), .tablo-container td:nth-child(5) { width: 80px; }  /* Süre */
+.tablo-container th:nth-child(6), .tablo-container td:nth-child(6) { width: 200px; } /* Açıklama */
+.tablo-container th:nth-child(7), .tablo-container td:nth-child(7) { width: 120px; } /* Durum */
+.tablo-container th:nth-child(8), .tablo-container td:nth-child(8) { width: 140px; } /* Yönetici Notu */
+.tablo-container th:nth-child(9), .tablo-container td:nth-child(9) { width: 200px; } /* İşlemler */
+
+/* İşlem butonları */
+.islem-butonlar {
+    display: flex;
+    gap: 8px;
+}
+
+.islem-butonlar button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.islem-butonlar button.btn-onayla {
+    background-color: #4caf50;
+    color: white;
+}
+
+.islem-butonlar button.btn-reddet {
+    background-color: #f44336;
+    color: white;
+}
+
+.islem-butonlar button:hover {
+    opacity: 0.9;
+}
+
+.yonetici-notu {
+    width: 100%;
+    min-height: 60px;
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+/* Responsive düzenlemeler */
+@media (max-width: 1440px) {
+    .container {
+        margin: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+        margin: 0 10px;
+    }
 }

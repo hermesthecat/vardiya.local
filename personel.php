@@ -12,6 +12,19 @@
 <body>
     <?php
     require_once 'functions.php';
+    session_start();
+
+    // Oturum kontrolü
+    if (!isset($_SESSION['kullanici_id'])) {
+        header('Location: giris.php');
+        exit;
+    }
+
+    // Yetki kontrolü
+    if (!in_array($_SESSION['rol'], ['yonetici', 'admin'])) {
+        header('Location: index.php');
+        exit;
+    }
 
     $hata = '';
     $basari = '';

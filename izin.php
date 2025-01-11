@@ -165,8 +165,14 @@
                             });
                             $personel = reset($personel);
 
-                            $baslangic = new DateTime($talep['baslangic_tarihi']);
-                            $bitis = new DateTime($talep['bitis_tarihi']);
+                            $baslangic = is_numeric($talep['baslangic_tarihi']) 
+                                ? DateTime::createFromFormat('U', $talep['baslangic_tarihi']) 
+                                : new DateTime($talep['baslangic_tarihi']);
+                            
+                            $bitis = is_numeric($talep['bitis_tarihi']) 
+                                ? DateTime::createFromFormat('U', $talep['bitis_tarihi']) 
+                                : new DateTime($talep['bitis_tarihi']);
+
                             $fark = $bitis->diff($baslangic);
                             $gunSayisi = $fark->days + 1;
 
@@ -194,22 +200,20 @@
                                 <td><?php echo date('d.m.Y', strtotime($talep['bitis_tarihi'])); ?></td>
                                 <td><?php echo $gunSayisi; ?> gün</td>
                                 <td><?php echo htmlspecialchars($talep['aciklama']); ?></td>
-                                <td class="<?php echo $durumRenk; ?>">
+                                <td class="durum-cell <?php echo $durumRenk; ?>">
                                     <i class="fas fa-<?php echo $durumIcon; ?>"></i>
                                     <?php echo ucfirst($talep['durum']); ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($talep['yonetici_notu'] ?? ''); ?></td>
                                 <td>
                                     <?php if ($talep['durum'] === 'beklemede'): ?>
-                                        <form method="POST" class="inline-form">
+                                        <form method="POST" class="islem-butonlar">
                                             <input type="hidden" name="talep_id" value="<?php echo $talep['id']; ?>">
-                                            <div class="form-group">
-                                                <textarea name="yonetici_notu" placeholder="Yönetici notu..." rows="2"></textarea>
-                                            </div>
-                                            <button type="submit" name="talep_guncelle" value="onaylandi" class="btn-duzenle">
+                                            <textarea name="yonetici_notu" class="yonetici-notu" placeholder="Yönetici notu ekleyin..."></textarea>
+                                            <button type="submit" name="talep_guncelle" value="onaylandi" class="btn-onayla">
                                                 <i class="fas fa-check"></i> Onayla
                                             </button>
-                                            <button type="submit" name="talep_guncelle" value="reddedildi" class="btn-sil">
+                                            <button type="submit" name="talep_guncelle" value="reddedildi" class="btn-reddet">
                                                 <i class="fas fa-times"></i> Reddet
                                             </button>
                                         </form>
@@ -244,8 +248,14 @@
                             });
                             $personel = reset($personel);
 
-                            $baslangic = new DateTime($izin['baslangic_tarihi']);
-                            $bitis = new DateTime($izin['bitis_tarihi']);
+                            $baslangic = is_numeric($izin['baslangic_tarihi']) 
+                                ? DateTime::createFromFormat('U', $izin['baslangic_tarihi']) 
+                                : new DateTime($izin['baslangic_tarihi']);
+                            
+                            $bitis = is_numeric($izin['bitis_tarihi']) 
+                                ? DateTime::createFromFormat('U', $izin['bitis_tarihi']) 
+                                : new DateTime($izin['bitis_tarihi']);
+
                             $fark = $bitis->diff($baslangic);
                             $gunSayisi = $fark->days + 1;
                         ?>
