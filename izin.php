@@ -196,8 +196,14 @@
                             <tr>
                                 <td><?php echo htmlspecialchars($personel['ad'] . ' ' . $personel['soyad']); ?></td>
                                 <td><?php echo $izinTurleri[$talep['izin_turu']]; ?></td>
-                                <td><?php echo date('d.m.Y', strtotime($talep['baslangic_tarihi'])); ?></td>
-                                <td><?php echo date('d.m.Y', strtotime($talep['bitis_tarihi'])); ?></td>
+                                <td><?php 
+                                    $baslangic_timestamp = is_numeric($talep['baslangic_tarihi']) ? $talep['baslangic_tarihi'] : strtotime($talep['baslangic_tarihi']);
+                                    echo date('d.m.Y', $baslangic_timestamp); 
+                                ?></td>
+                                <td><?php 
+                                    $bitis_timestamp = is_numeric($talep['bitis_tarihi']) ? $talep['bitis_tarihi'] : strtotime($talep['bitis_tarihi']);
+                                    echo date('d.m.Y', $bitis_timestamp); 
+                                ?></td>
                                 <td><?php echo $gunSayisi; ?> gün</td>
                                 <td><?php echo htmlspecialchars($talep['aciklama']); ?></td>
                                 <td class="durum-cell <?php echo $durumRenk; ?>">
@@ -262,8 +268,14 @@
                             <tr>
                                 <td><?php echo htmlspecialchars($personel['ad'] . ' ' . $personel['soyad']); ?></td>
                                 <td><?php echo $izinTurleri[$izin['izin_turu']]; ?></td>
-                                <td><?php echo date('d.m.Y', strtotime($izin['baslangic_tarihi'])); ?></td>
-                                <td><?php echo date('d.m.Y', strtotime($izin['bitis_tarihi'])); ?></td>
+                                <td><?php 
+                                    $baslangic_timestamp = is_numeric($izin['baslangic_tarihi']) ? $izin['baslangic_tarihi'] : strtotime($izin['baslangic_tarihi']);
+                                    echo date('d.m.Y', $baslangic_timestamp); 
+                                ?></td>
+                                <td><?php 
+                                    $bitis_timestamp = is_numeric($izin['bitis_tarihi']) ? $izin['bitis_tarihi'] : strtotime($izin['bitis_tarihi']);
+                                    echo date('d.m.Y', $bitis_timestamp); 
+                                ?></td>
                                 <td><?php echo $gunSayisi; ?> gün</td>
                                 <td><?php echo htmlspecialchars($izin['aciklama']); ?></td>
                             </tr>
