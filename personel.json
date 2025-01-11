@@ -1,478 +1,471 @@
 {
-    "personel": [
-        {
-            "id": "64f1a2b3c4d5",
-            "ad": "Ahmet",
-            "soyad": "Yılmaz",
-            "yetki": "admin",
-            "email": "ahmet@firma.com",
-            "telefon": "5551234567",
-            "sifre": "123456",
-            "tercihler": {
-                "bildirimler": true,
-                "tercih_edilen_vardiyalar": [
-                    "sabah",
-                    "aksam"
-                ],
-                "tercih_edilmeyen_gunler": [],
-                "max_ardisik_vardiya": 1,
-                "min_gunluk_dinlenme": 8
-            },
-            "izin_haklari": {
-                "yillik": {
-                    "toplam": 14,
-                    "kullanilan": 4,
-                    "kalan": 10,
-                    "son_guncelleme": 1704844800
-                },
-                "mazeret": {
-                    "toplam": 5,
-                    "kullanilan": 1,
-                    "kalan": 4
-                },
-                "hastalik": {
-                    "kullanilan": 2
-                }
-            }
+  "personel": [
+    {
+      "id": "64f1a2b3c4d5",
+      "ad": "Ahmet",
+      "soyad": "Yılmaz",
+      "yetki": "admin",
+      "email": "ahmet@firma.com",
+      "telefon": "5551234567",
+      "sifre": "123456",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["sabah", "aksam"],
+        "tercih_edilmeyen_gunler": [],
+        "max_ardisik_vardiya": 1,
+        "min_gunluk_dinlenme": 8
+      },
+      "izin_haklari": {
+        "yillik": {
+          "toplam": 14,
+          "kullanilan": 4,
+          "kalan": 10,
+          "son_guncelleme": 1704844800
         },
-        {
-            "id": "64f1a2b3c4d6",
-            "ad": "Ayşe",
-            "soyad": "Demir",
-            "yetki": "personel",
-            "email": "ayse@firma.com",
-            "telefon": "5551234568",
-            "sifre": "123456",
-            "tercihler": {
-                "bildirimler": true,
-                "tercih_edilen_vardiyalar": [
-                    "sabah"
-                ],
-                "tercih_edilmeyen_gunler": [
-                    "cumartesi",
-                    "pazar"
-                ]
-            }
+        "mazeret": {
+          "toplam": 5,
+          "kullanilan": 1,
+          "kalan": 4
         },
-        {
-            "id": "64f1a2b3c4d7",
-            "ad": "Mehmet",
-            "soyad": "Kaya",
-            "yetki": "personel",
-            "email": "mehmet@firma.com",
-            "telefon": "5551234569",
-            "sifre": "123456",
-            "tercihler": {
-                "bildirimler": true,
-                "tercih_edilen_vardiyalar": [
-                    "gece"
-                ],
-                "tercih_edilmeyen_gunler": [
-                    "cumartesi"
-                ]
-            }
-        },
-        {
-            "id": "64f1a2b3c4d8",
-            "ad": "Fatma",
-            "soyad": "Çelik",
-            "yetki": "personel",
-            "email": "fatma@firma.com",
-            "telefon": "5551234570",
-            "sifre": "123456",
-            "tercihler": {
-                "bildirimler": true,
-                "tercih_edilen_vardiyalar": [
-                    "sabah",
-                    "aksam"
-                ],
-                "tercih_edilmeyen_gunler": [
-                    "pazar"
-                ]
-            }
+        "hastalik": {
+          "kullanilan": 2
         }
-    ],
-    "vardiyalar": [
-        {
-            "id": "64f1a2b3c4e1",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1705276800,
-            "vardiya_turu": "sabah",
-            "notlar": "Özel proje toplantısı var",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "64f1a2b3c4e2",
-            "personel_id": "64f1a2b3c4d6",
-            "tarih": 1705276800,
-            "vardiya_turu": "aksam",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "64f1a2b3c4e3",
-            "personel_id": "64f1a2b3c4d7",
-            "tarih": 1705276800,
-            "vardiya_turu": "gece",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "64f1a2b3c4e4",
-            "personel_id": "64f1a2b3c4d8",
-            "tarih": 1705363200,
-            "vardiya_turu": "sabah",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "64f1a2b3c4e5",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1705363200,
-            "vardiya_turu": "aksam",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "67824dc0bbf0a",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1736888400,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "678250cb53ded",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1736974800,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "678250d0a52bf",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1737061200,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "678250d4f1825",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1737147600,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "678250da2a7c3",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1737234000,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "678250df0ba85",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1737320400,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        },
-        {
-            "id": "678250e75e892",
-            "personel_id": "64f1a2b3c4d5",
-            "tarih": 1737406800,
-            "vardiya_turu": "sabah",
-            "notlar": "",
-            "durum": "onaylandi"
-        }
-    ],
-    "izinler": [
-        {
-            "id": "64f1a2b3c4f1",
-            "personel_id": "64f1a2b3c4d5",
-            "baslangic_tarihi": 1706745600,
-            "bitis_tarihi": 1707091200,
-            "izin_turu": "yillik",
-            "aciklama": "Yıllık izin",
-            "durum": "onaylandi",
-            "onaylayan_id": "64f1a2b3c4d6",
-            "onay_tarihi": 1704844800,
-            "olusturma_tarihi": 1704758400,
-            "guncelleme_tarihi": 1704844800,
-            "gun_sayisi": 4,
-            "belgeler": [],
-            "notlar": ""
-        }
-    ],
-    "vardiya_talepleri": [
-        {
-            "id": "64f1a2b3c4g1",
-            "vardiya_id": "64f1a2b3c4e1",
-            "talep_eden_personel_id": "64f1a2b3c4d5",
-            "aciklama": "Özel durum nedeniyle değişim talebi",
-            "durum": "beklemede",
-            "olusturma_tarihi": 1704672000,
-            "guncelleme_tarihi": 1704672000
-        }
-    ],
-    "izin_talepleri": [
-        {
-            "id": "64f1a2b3c4h1",
-            "personel_id": "64f1a2b3c4d6",
-            "baslangic_tarihi": 1709251200,
-            "bitis_tarihi": 1709424000,
-            "izin_turu": "yillik",
-            "aciklama": "Aile ziyareti",
-            "durum": "beklemede",
-            "talep_tarihi": 1704844800,
-            "gun_sayisi": 3,
-            "yonetici_notu": "",
-            "red_sebebi": "",
-            "belgeler": [],
-            "hatirlatma_gonderildi": false
-        }
-    ],
-    "bildirim_abonelikleri": [
-        {
-            "personel_id": "64f1a2b3c4d5",
-            "endpoint": "https:\/\/fcm.googleapis.com\/fcm\/send\/...",
-            "auth": "auth_key_1",
-            "p256dh": "p256dh_key_1",
-            "kayit_tarihi": 1704844800,
-            "son_guncelleme": 1704844800
-        }
-    ],
-    "sistem_ayarlari": {
-        "vardiya_turleri": [
-            {
-                "id": "sabah",
-                "baslangic": "08:00",
-                "bitis": "16:00"
-            },
-            {
-                "id": "aksam",
-                "baslangic": "16:00",
-                "bitis": "00:00"
-            },
-            {
-                "id": "gece",
-                "baslangic": "00:00",
-                "bitis": "08:00"
-            }
-        ],
-        "izin_turleri": {
-            "yillik": {
-                "ad": "Yıllık İzin",
-                "varsayilan_hak": 14,
-                "max_ardisik_gun": 21,
-                "belge_gerekli": false,
-                "onay_gerekli": true
-            },
-            "dogum": {
-                "ad": "Doğum İzni",
-                "varsayilan_hak": null,
-                "max_ardisik_gun": null,
-                "belge_gerekli": true,
-                "onay_gerekli": true
-            },
-            "olum": {
-                "ad": "Ölüm İzni",
-                "varsayilan_hak": 3,
-                "max_ardisik_gun": 3,
-                "belge_gerekli": true,
-                "onay_gerekli": false
-            },
-            "hastalik": {
-                "ad": "Hastalık İzni",
-                "varsayilan_hak": null,
-                "max_ardisik_gun": null,
-                "belge_gerekli": true,
-                "onay_gerekli": true
-            },
-            "mazeret": {
-                "ad": "Mazeret İzni",
-                "varsayilan_hak": 5,
-                "max_ardisik_gun": 2,
-                "belge_gerekli": false,
-                "onay_gerekli": true
-            }
-        },
-        "izin_ayarlari": {
-            "max_bekleyen_talep": 3,
-            "min_talep_gun": 3,
-            "otomatik_onay_gun": 1,
-            "hatirlatma_suresi": 48,
-            "yil_sonu_devir": false,
-            "hafta_sonu_dahil": false,
-            "resmi_tatil_dahil": false
-        }
+      }
     },
-    "push_abonelikleri": [
-        {
-            "endpoint": "https:\/\/fcm.googleapis.com\/fcm\/send\/...",
-            "expirationTime": null,
-            "keys": {
-                "p256dh": "BASE64_ENCODED_KEY",
-                "auth": "BASE64_ENCODED_AUTH"
-            },
-            "kullanici_id": "64f1a2b3c4d5",
-            "cihaz_bilgisi": {
-                "platform": "web",
-                "tarayici": "chrome",
-                "son_aktivite": 1705324800
-            }
-        }
-    ],
-    "bildirim_ayarlari": {
-        "vapid": {
-            "subject": "mailto:your@email.com",
-            "publicKey": "YOUR_PUBLIC_VAPID_KEY",
-            "privateKey": "YOUR_PRIVATE_VAPID_KEY"
-        },
-        "bildirim_tipleri": {
-            "vardiya_hatirlatma": true,
-            "vardiya_degisiklik": true,
-            "izin_talebi": true,
-            "sistem_duyurusu": true
-        },
-        "varsayilan_mesajlar": {
-            "vardiya_hatirlatma": "Yarın vardiya başlangıcınız bulunmaktadır.",
-            "vardiya_degisiklik": "Vardiya planınızda değişiklik yapıldı.",
-            "izin_talebi": "Yeni bir izin talebiniz var.",
-            "sistem_duyurusu": "Yeni bir sistem duyurusu bulunmaktadır."
-        }
+    {
+      "id": "64f1a2b3c4d6",
+      "ad": "Ayşe",
+      "soyad": "Demir",
+      "yetki": "personel",
+      "email": "ayse@firma.com",
+      "telefon": "5551234568",
+      "sifre": "123456",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["sabah"],
+        "tercih_edilmeyen_gunler": ["cumartesi", "pazar"]
+      }
     },
-    "islem_loglari": [
-        {
-            "id": "678243213a4de",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "giris",
-            "aciklama": "Başarılı giriş: ahmet@firma.com",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736590113,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "6782444bd144c",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "tercih_guncelle",
-            "aciklama": "Kullanıcı tercihleri güncellendi: 64f1a2b3c4d5",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736590411,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "67824dc0beb69",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-15",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736592832,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678250cb56b62",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-16",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736593611,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678250d0a8136",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-17",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736593616,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678250d5001bd",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-18",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736593621,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678250da2d44f",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-19",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736593626,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678250df0e771",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-20",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736593631,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678250e761505",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "vardiya_ekle",
-            "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-21",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736593639,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.4.1"
-        },
-        {
-            "id": "678253314743d",
-            "kullanici_id": "64f1a2b3c4d5",
-            "kullanici_rol": "admin",
-            "islem_turu": "giris",
-            "aciklama": "Başarılı giriş: ahmet@firma.com",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736594225,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.5.0"
-        },
-        {
-            "id": "6782538ccae7c",
-            "kullanici_id": null,
-            "kullanici_rol": null,
-            "islem_turu": "hata",
-            "aciklama": "Vardiya türü etiketi alınamadı: Geçersiz vardiya türü: ",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736594316,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.5.0"
-        },
-        {
-            "id": "6782539b18bc2",
-            "kullanici_id": null,
-            "kullanici_rol": null,
-            "islem_turu": "hata",
-            "aciklama": "Vardiya türü etiketi alınamadı: Geçersiz vardiya türü: ",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736594331,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.5.0"
-        },
-        {
-            "id": "678253a945c67",
-            "kullanici_id": null,
-            "kullanici_rol": null,
-            "islem_turu": "hata",
-            "aciklama": "Vardiya türü etiketi alınamadı: Geçersiz vardiya türü: ",
-            "ip_adresi": "127.0.0.1",
-            "tarih": 1736594345,
-            "tarayici": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko\/20100101 Goanna\/6.7 Firefox\/102.0 PaleMoon\/33.5.0"
-        }
-    ]
+    {
+      "id": "64f1a2b3c4d7",
+      "ad": "Mehmet",
+      "soyad": "Kaya",
+      "yetki": "personel",
+      "email": "mehmet@firma.com",
+      "telefon": "5551234569",
+      "sifre": "123456",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["gece"],
+        "tercih_edilmeyen_gunler": ["cumartesi"]
+      }
+    },
+    {
+      "id": "64f1a2b3c4d8",
+      "ad": "Fatma",
+      "soyad": "Çelik",
+      "yetki": "personel",
+      "email": "fatma@firma.com",
+      "telefon": "5551234570",
+      "sifre": "123456",
+      "tercihler": {
+        "bildirimler": true,
+        "tercih_edilen_vardiyalar": ["sabah", "aksam"],
+        "tercih_edilmeyen_gunler": ["pazar"]
+      }
+    }
+  ],
+  "vardiyalar": [
+    {
+      "id": "64f1a2b3c4e1",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1705276800,
+      "vardiya_turu": "sabah",
+      "notlar": "Özel proje toplantısı var",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "64f1a2b3c4e2",
+      "personel_id": "64f1a2b3c4d6",
+      "tarih": 1705276800,
+      "vardiya_turu": "aksam",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "64f1a2b3c4e3",
+      "personel_id": "64f1a2b3c4d7",
+      "tarih": 1705276800,
+      "vardiya_turu": "gece",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "64f1a2b3c4e4",
+      "personel_id": "64f1a2b3c4d8",
+      "tarih": 1705363200,
+      "vardiya_turu": "sabah",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "64f1a2b3c4e5",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1705363200,
+      "vardiya_turu": "aksam",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "67824dc0bbf0a",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1736888400,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "678250cb53ded",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1736974800,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "678250d0a52bf",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1737061200,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "678250d4f1825",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1737147600,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "678250da2a7c3",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1737234000,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "678250df0ba85",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1737320400,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    },
+    {
+      "id": "678250e75e892",
+      "personel_id": "64f1a2b3c4d5",
+      "tarih": 1737406800,
+      "vardiya_turu": "sabah",
+      "notlar": "",
+      "durum": "onaylandi"
+    }
+  ],
+  "izinler": [
+    {
+      "id": "64f1a2b3c4f1",
+      "personel_id": "64f1a2b3c4d5",
+      "baslangic_tarihi": 1706745600,
+      "bitis_tarihi": 1707091200,
+      "izin_turu": "yillik",
+      "aciklama": "Yıllık izin",
+      "durum": "onaylandi",
+      "onaylayan_id": "64f1a2b3c4d6",
+      "onay_tarihi": 1704844800,
+      "olusturma_tarihi": 1704758400,
+      "guncelleme_tarihi": 1704844800,
+      "gun_sayisi": 4,
+      "belgeler": [],
+      "notlar": ""
+    }
+  ],
+  "vardiya_talepleri": [
+    {
+      "id": "64f1a2b3c4g1",
+      "vardiya_id": "64f1a2b3c4e1",
+      "talep_eden_personel_id": "64f1a2b3c4d5",
+      "aciklama": "Özel durum nedeniyle değişim talebi",
+      "durum": "beklemede",
+      "olusturma_tarihi": 1704672000,
+      "guncelleme_tarihi": 1704672000
+    }
+  ],
+  "izin_talepleri": [
+    {
+      "id": "64f1a2b3c4h1",
+      "personel_id": "64f1a2b3c4d6",
+      "baslangic_tarihi": 1709251200,
+      "bitis_tarihi": 1709424000,
+      "izin_turu": "yillik",
+      "aciklama": "Aile ziyareti",
+      "durum": "beklemede",
+      "talep_tarihi": 1704844800,
+      "gun_sayisi": 3,
+      "yonetici_notu": "",
+      "red_sebebi": "",
+      "belgeler": [],
+      "hatirlatma_gonderildi": false
+    }
+  ],
+  "bildirim_abonelikleri": [
+    {
+      "personel_id": "64f1a2b3c4d5",
+      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+      "auth": "auth_key_1",
+      "p256dh": "p256dh_key_1",
+      "kayit_tarihi": 1704844800,
+      "son_guncelleme": 1704844800
+    }
+  ],
+  "sistem_ayarlari": {
+    "vardiya_turleri": [
+      {
+        "id": "sabah",
+        "baslangic": "08:00",
+        "bitis": "16:00"
+      },
+      {
+        "id": "aksam",
+        "baslangic": "16:00",
+        "bitis": "00:00"
+      },
+      {
+        "id": "gece",
+        "baslangic": "00:00",
+        "bitis": "08:00"
+      }
+    ],
+    "izin_turleri": {
+      "yillik": {
+        "ad": "Yıllık İzin",
+        "varsayilan_hak": 14,
+        "max_ardisik_gun": 21,
+        "belge_gerekli": false,
+        "onay_gerekli": true
+      },
+      "dogum": {
+        "ad": "Doğum İzni",
+        "varsayilan_hak": null,
+        "max_ardisik_gun": null,
+        "belge_gerekli": true,
+        "onay_gerekli": true
+      },
+      "olum": {
+        "ad": "Ölüm İzni",
+        "varsayilan_hak": 3,
+        "max_ardisik_gun": 3,
+        "belge_gerekli": true,
+        "onay_gerekli": false
+      },
+      "hastalik": {
+        "ad": "Hastalık İzni",
+        "varsayilan_hak": null,
+        "max_ardisik_gun": null,
+        "belge_gerekli": true,
+        "onay_gerekli": true
+      },
+      "mazeret": {
+        "ad": "Mazeret İzni",
+        "varsayilan_hak": 5,
+        "max_ardisik_gun": 2,
+        "belge_gerekli": false,
+        "onay_gerekli": true
+      }
+    },
+    "izin_ayarlari": {
+      "max_bekleyen_talep": 3,
+      "min_talep_gun": 3,
+      "otomatik_onay_gun": 1,
+      "hatirlatma_suresi": 48,
+      "yil_sonu_devir": false,
+      "hafta_sonu_dahil": false,
+      "resmi_tatil_dahil": false
+    }
+  },
+  "push_abonelikleri": [
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+      "expirationTime": null,
+      "keys": {
+        "p256dh": "BASE64_ENCODED_KEY",
+        "auth": "BASE64_ENCODED_AUTH"
+      },
+      "kullanici_id": "64f1a2b3c4d5",
+      "cihaz_bilgisi": {
+        "platform": "web",
+        "tarayici": "chrome",
+        "son_aktivite": 1705324800
+      }
+    }
+  ],
+  "bildirim_ayarlari": {
+    "vapid": {
+      "subject": "mailto:your@email.com",
+      "publicKey": "YOUR_PUBLIC_VAPID_KEY",
+      "privateKey": "YOUR_PRIVATE_VAPID_KEY"
+    },
+    "bildirim_tipleri": {
+      "vardiya_hatirlatma": true,
+      "vardiya_degisiklik": true,
+      "izin_talebi": true,
+      "sistem_duyurusu": true
+    },
+    "varsayilan_mesajlar": {
+      "vardiya_hatirlatma": "Yarın vardiya başlangıcınız bulunmaktadır.",
+      "vardiya_degisiklik": "Vardiya planınızda değişiklik yapıldı.",
+      "izin_talebi": "Yeni bir izin talebiniz var.",
+      "sistem_duyurusu": "Yeni bir sistem duyurusu bulunmaktadır."
+    }
+  },
+  "islem_loglari": [
+    {
+      "id": "678243213a4de",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "giris",
+      "aciklama": "Başarılı giriş: ahmet@firma.com",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736590113,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "6782444bd144c",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "tercih_guncelle",
+      "aciklama": "Kullanıcı tercihleri güncellendi: 64f1a2b3c4d5",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736590411,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "67824dc0beb69",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-15",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736592832,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678250cb56b62",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-16",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736593611,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678250d0a8136",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-17",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736593616,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678250d5001bd",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-18",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736593621,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678250da2d44f",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-19",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736593626,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678250df0e771",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-20",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736593631,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678250e761505",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "vardiya_ekle",
+      "aciklama": "Yeni vardiya eklendi: Personel ID: 64f1a2b3c4d5, Tarih: 2025-01-21",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736593639,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.4.1"
+    },
+    {
+      "id": "678253314743d",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "giris",
+      "aciklama": "Başarılı giriş: ahmet@firma.com",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736594225,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.5.0"
+    },
+    {
+      "id": "6782538ccae7c",
+      "kullanici_id": null,
+      "kullanici_rol": null,
+      "islem_turu": "hata",
+      "aciklama": "Vardiya türü etiketi alınamadı: Geçersiz vardiya türü: ",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736594316,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.5.0"
+    },
+    {
+      "id": "6782539b18bc2",
+      "kullanici_id": null,
+      "kullanici_rol": null,
+      "islem_turu": "hata",
+      "aciklama": "Vardiya türü etiketi alınamadı: Geçersiz vardiya türü: ",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736594331,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.5.0"
+    },
+    {
+      "id": "678253a945c67",
+      "kullanici_id": null,
+      "kullanici_rol": null,
+      "islem_turu": "hata",
+      "aciklama": "Vardiya türü etiketi alınamadı: Geçersiz vardiya türü: ",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736594345,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.5.0"
+    },
+    {
+      "id": "67827f17969d1",
+      "kullanici_id": "64f1a2b3c4d5",
+      "kullanici_rol": "admin",
+      "islem_turu": "giris",
+      "aciklama": "Başarılı giriş: ahmet@firma.com",
+      "ip_adresi": "127.0.0.1",
+      "tarih": 1736605463,
+      "tarayici": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Goanna/6.7 Firefox/102.0 PaleMoon/33.5.0"
+    }
+  ]
 }
